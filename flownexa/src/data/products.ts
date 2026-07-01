@@ -1,0 +1,232 @@
+import { Product } from "@/types/product";
+
+export const products: Product[] = [
+  {
+    id: "prod-1",
+    name: "Sequoia Inspiring Musico Pro",
+    slug: "sequoia-inspiring-musico-pro",
+    price: 299,
+    originalPrice: 399,
+    images: ["/images/products/headphones.png"],
+    category: "audio",
+    rating: 4.8,
+    reviewCount: 128,
+    colors: ["#0F1117", "#F6F8F7", "#3B82F6"],
+    inStock: true,
+    featured: true,
+    trending: true,
+    description: "Experience sound in its purest form with Sequoia Inspiring Musico Pro. Engineered with custom-built dynamic drivers and active noise cancellation, these royal blue headphones deliver an immersive, studio-quality soundscape that filters out the noise of the world. Features ultra-breathable mesh ear cushions and a sleek, lightweight headband for all-day comfort.",
+    specifications: {
+      "Driver Size": "40mm Dynamic",
+      "Frequency Response": "4Hz - 40kHz",
+      "Connectivity": "Bluetooth 5.3 & 3.5mm Jack",
+      "Battery Life": "Up to 50 Hours (ANC Off)",
+      "Charging": "USB-C Fast Charging (10 mins = 5 hrs)"
+    }
+  },
+  {
+    id: "prod-2",
+    name: "FlowNexa Orizon VR Headset",
+    slug: "flownexa-orizon-vr",
+    price: 599,
+    originalPrice: 799,
+    images: ["/images/products/vr-headset.png"],
+    category: "electronics",
+    rating: 4.9,
+    reviewCount: 94,
+    colors: ["#0F1117", "#FFFFFF"],
+    inStock: true,
+    featured: true,
+    trending: true,
+    description: "Step into new dimensions with the FlowNexa Orizon VR Headset. Featuring custom high-resolution dual LCD displays (2K per eye) and advanced spatial audio integration, Orizon provides an unparalleled virtual reality experience. Designed with a balanced ergonomic strap and lightweight chassis to minimize fatigue during long sessions.",
+    specifications: {
+      "Display Resolution": "2048 x 2048 per eye",
+      "Refresh Rate": "90Hz - 120Hz",
+      "Field of View": "110 Degrees",
+      "Tracking": "Inside-out tracking (no base stations)",
+      "Storage Options": "128GB / 256GB"
+    }
+  },
+  {
+    id: "prod-3",
+    name: "Aural X-Buds Pro",
+    slug: "aural-x-buds-pro",
+    price: 149,
+    originalPrice: 199,
+    images: ["/images/products/earbuds.png"],
+    category: "audio",
+    rating: 4.7,
+    reviewCount: 165,
+    colors: ["#FFFFFF", "#0F1117"],
+    inStock: true,
+    featured: true,
+    trending: true,
+    description: "True wireless audio, redefined. The Aural X-Buds Pro feature high-fidelity audio, crystal-clear call quality through triple microphone arrays, and intelligent active noise cancellation. The sleek, metallic-accented buds sit in a matte black charging case that supports wireless charging.",
+    specifications: {
+      "Driver Size": "11mm Dual Driver",
+      "Water Resistance": "IPX4 Sweat Proof",
+      "Battery Life": "9 Hours (Buds) + 27 Hours (Case)",
+      "Connectivity": "Bluetooth 5.2 (Multipoint)",
+      "Wireless Charging": "Qi Certified"
+    }
+  },
+  {
+    id: "prod-4",
+    name: "Apex Gaming Keyboard V2",
+    slug: "apex-gaming-keyboard-v2",
+    price: 129,
+    originalPrice: 159,
+    images: ["https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=60"],
+    category: "gaming",
+    rating: 4.6,
+    reviewCount: 82,
+    colors: ["#0F1117"],
+    inStock: true,
+    featured: false,
+    trending: true,
+    description: "Take control of your gaming experience with the Apex Mechanical Keyboard. Featuring custom linear red switches, full RGB backlighting with per-key customization, and a robust aircraft-grade aluminum frame. Includes a magnetic wrist rest for peak ergonomics.",
+    specifications: {
+      "Switch Type": "Linear Mechanical Red",
+      "Backlight": "Dynamic RGB Per-Key",
+      "Frame": "Aircraft-grade Aluminum",
+      "Polling Rate": "1000Hz",
+      "Cable": "Detachable Braided USB-C"
+    }
+  },
+  {
+    id: "prod-5",
+    name: "Horizon Smartwatch Horizon-X",
+    slug: "horizon-smartwatch-horizon-x",
+    price: 249,
+    originalPrice: 299,
+    images: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=60"],
+    category: "wearables",
+    rating: 4.5,
+    reviewCount: 110,
+    colors: ["#0F1117", "#E1FF4B", "#EF4444"],
+    inStock: true,
+    featured: true,
+    trending: false,
+    description: "Elevate your daily routine with the Horizon-X Smartwatch. Packed with advanced wellness tracking sensors including heart rate, SpO2, and sleep quality analytics. Features a vibrant Always-On AMOLED display housed in an elegant circular stainless steel frame.",
+    specifications: {
+      "Display": "1.43\" AMOLED Always-On",
+      "Battery Life": "Up to 7 Days typical usage",
+      "Water Resistance": "5ATM (Up to 50m)",
+      "Sensors": "Heart Rate, SpO2, Accelerometer, Gyroscope",
+      "Connectivity": "GPS, Bluetooth 5.0"
+    }
+  },
+  {
+    id: "prod-6",
+    name: "Lumina Smart Bulb Kit",
+    slug: "lumina-smart-bulb-kit",
+    price: 79,
+    originalPrice: 99,
+    images: ["https://images.unsplash.com/photo-1550985616-10810253b84d?w=600&auto=format&fit=crop&q=60"],
+    category: "smart-home",
+    rating: 4.4,
+    reviewCount: 73,
+    colors: ["#FFFFFF"],
+    inStock: true,
+    featured: false,
+    trending: false,
+    description: "Transform your home ambiance with the Lumina Smart Bulb Starter Kit. Includes 3 smart RGB LED bulbs that connect directly to your Wi-Fi network. Customize colors, schedules, and brightness through the FlowNexa app or control them with Alexa & Google Assistant.",
+    specifications: {
+      "Brightness": "800 Lumens (60W equivalent)",
+      "Color Options": "16 Million Colors + Warm/Cool White",
+      "Protocol": "Wi-Fi 2.4GHz (No hub required)",
+      "Lifetime": "25,000 Hours",
+      "Fitting": "E26 Standard Base"
+    }
+  },
+  {
+    id: "prod-7",
+    name: "Onyx Wireless Power Bank",
+    slug: "onyx-wireless-power-bank",
+    price: 59,
+    images: ["https://images.unsplash.com/photo-1609592424109-dd772c72b1cc?w=600&auto=format&fit=crop&q=60"],
+    category: "accessories",
+    rating: 4.6,
+    reviewCount: 45,
+    colors: ["#0F1117"],
+    inStock: true,
+    featured: false,
+    trending: false,
+    description: "Fast wireless charging on the go. The Onyx Power Bank offers 10,000mAh capacity with strong magnetic alignment to snap onto compatible smartphones. Supports up to 15W wireless charging and 20W wired USB-C Power Delivery.",
+    specifications: {
+      "Capacity": "10,000mAh",
+      "Wireless Output": "15W Max",
+      "Wired Output": "20W USB-C PD Max",
+      "Weight": "195g",
+      "Dimensions": "104 x 68 x 16mm"
+    }
+  },
+  {
+    id: "prod-8",
+    name: "Zenith ANC Wireless Headphones",
+    slug: "zenith-anc-headphones",
+    price: 199,
+    originalPrice: 249,
+    images: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60"],
+    category: "audio",
+    rating: 4.5,
+    reviewCount: 88,
+    colors: ["#0F1117", "#F6F8F7"],
+    inStock: false,
+    featured: false,
+    trending: false,
+    description: "Escape the noise with Zenith Wireless Headphones. Hybrid active noise cancellation technology blocks out surrounding din, leaving you with detailed high-res audio. Soft memory foam ear pads enable comfortable wear for extended periods.",
+    specifications: {
+      "Driver": "40mm Dynamic",
+      "Battery Life": "35 Hours with ANC",
+      "Charging Time": "2 Hours",
+      "Noise Cancellation": "Hybrid ANC up to 35dB",
+      "Weight": "260g"
+    }
+  },
+  {
+    id: "prod-9",
+    name: "Atlas Smart Thermostat",
+    slug: "atlas-smart-thermostat",
+    price: 189,
+    images: ["https://images.unsplash.com/photo-1545259741-2ea3ebf61fa3?w=600&auto=format&fit=crop&q=60"],
+    category: "smart-home",
+    rating: 4.7,
+    reviewCount: 52,
+    colors: ["#0F1117", "#FFFFFF"],
+    inStock: true,
+    featured: false,
+    trending: true,
+    description: "Take control of your home climate with Atlas. It automatically learns your schedule and temperature preferences to optimize energy efficiency. The sleek circular glass touch interface blends seamlessly into any modern home design.",
+    specifications: {
+      "Compatibility": "Most 24V heating & cooling systems",
+      "Display": "2.8\" Circular LCD Glass Touch",
+      "Connectivity": "Wi-Fi, Bluetooth",
+      "Integrations": "Apple HomeKit, Alexa, Google Assistant",
+      "Energy Savings": "Average 15% on cooling, 10-12% on heating"
+    }
+  },
+  {
+    id: "prod-10",
+    name: "Prime Wireless Ergonomic Mouse",
+    slug: "prime-ergonomic-mouse",
+    price: 89,
+    originalPrice: 109,
+    images: ["https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600&auto=format&fit=crop&q=60"],
+    category: "accessories",
+    rating: 4.8,
+    reviewCount: 140,
+    colors: ["#0F1117", "#F6F8F7"],
+    inStock: true,
+    featured: false,
+    trending: false,
+    description: "Maximize your productivity and wrist comfort. The Prime Ergonomic Mouse features an optimal 57-degree vertical angle to reduce wrist strain. The high-precision optical sensor works flawlessly on almost any surface including glass.",
+    specifications: {
+      "Sensor": "High-precision Optical up to 4000 DPI",
+      "Battery Life": "Up to 4 Months on full charge",
+      "Connection": "USB Receiver or Bluetooth",
+      "Buttons": "6 Customizable Buttons",
+      "Weight": "135g"
+    }
+  }
+];
