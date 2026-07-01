@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: flownexa-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm run build
+    startCommand: node dist/server.js
+    healthCheckPath: /health
