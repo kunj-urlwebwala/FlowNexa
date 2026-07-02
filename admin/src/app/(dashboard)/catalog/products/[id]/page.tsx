@@ -117,19 +117,19 @@ export default function ProductDetailPage(props: PageProps) {
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">Selling Price:</span>
-                  <span className="font-bold text-flownexa-lime text-sm">${product.price.toFixed(2)}</span>
+                  <span className="font-bold text-flownexa-lime text-sm">₹{product.price.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">Original Price:</span>
-                  <span className="text-muted-foreground line-through">${product.originalPrice ? product.originalPrice.toFixed(2) : "N/A"}</span>
+                  <span className="text-muted-foreground line-through">₹{product.originalPrice ? product.originalPrice.toFixed(2) : "N/A"}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs border-t border-white/5 pt-2.5">
                   <span className="text-muted-foreground">Cost Price:</span>
-                  <span className="font-bold text-white">${product.costPrice.toFixed(2)}</span>
+                  <span className="font-bold text-white">₹{product.costPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">Markup Profit:</span>
-                  <span className="font-bold text-emerald-400">+${(product.price - product.costPrice).toFixed(2)}</span>
+                  <span className="font-bold text-emerald-400">+₹{(product.price - product.costPrice).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

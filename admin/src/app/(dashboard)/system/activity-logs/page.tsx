@@ -7,7 +7,7 @@ import { Activity } from "lucide-react";
 export default function ActivityLogsPage() {
   const [logs, setLogs] = useState([
     { title: "Product catalog created", timestamp: "10 mins ago", isCompleted: true, description: "Super Admin created Seiko Acoustics product listing." },
-    { title: "Bank checking payout settled", timestamp: "3 hours ago", isCompleted: true, description: "Transferred $15,000 to Silicon Valley checking node." },
+    { title: "Bank checking payout settled", timestamp: "3 hours ago", isCompleted: true, description: "Transferred ₹15,000 to Silicon Valley checking node." },
     { title: "API integration modified", timestamp: "Yesterday", isCompleted: true, description: "Stripe webhook secret tokens updated." },
   ]);
 

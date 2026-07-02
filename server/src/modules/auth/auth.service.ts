@@ -3,6 +3,9 @@ import { hashPassword, verifyPassword } from "../../shared/utils/hash.util";
 import { generateAccessToken, generateRefreshToken, TokenPayload, verifyRefreshToken } from "../../shared/utils/jwt.util";
 import { AppError, AuthenticationError, ConflictError, NotFoundError } from "../../shared/errors/AppError";
 import { AdminRole, AdminStatus } from "@prisma/client";
+import { addEmailJob } from "../../jobs/queue";
+import { generateWelcomeEmailHtml, generateWelcomeEmailSubject } from "../../shared/templates/welcome-email.template";
+import { logger } from "../../config/logger";
 
 export class AuthService {
   /**
@@ -45,6 +48,18 @@ export class AuthService {
 
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
+
+    // Send welcome email (fire-and-forget, don't block response)
+    try {
+      await addEmailJob("send-welcome-email", {
+        to: user.email,
+        subject: generateWelcomeEmailSubject(),
+        body: generateWelcomeEmailHtml({ customerName: user.name }),
+      });
+    } catch (error) {
+      // Don't fail registration if email sending fails
+      logger.error({ error, userId: user.id }, "Failed to schedule welcome email job (non-critical)");
+    }
 
     return { user, accessToken, refreshToken };
   }

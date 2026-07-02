@@ -110,7 +110,7 @@ export const mockActivityFeed: ActivityEvent[] = [
   {
     id: "act-1",
     title: "Order #FN-847291 placed",
-    description: "Alex Mercer purchased Sequoia Inspiring Musico Pro ($299.00)",
+    description: "Alex Mercer purchased Sequoia Inspiring Musico Pro (₹299.00)",
     timestamp: "2 mins ago",
     type: "order",
   },

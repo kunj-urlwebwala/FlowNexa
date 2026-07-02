@@ -69,7 +69,7 @@ export default function DashboardHome() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
-          value="$124,580"
+          value="₹124,580"
           icon={DollarSign}
           trend={{ value: 12.5, isUp: true }}
           variant="highlighted"
@@ -113,7 +113,7 @@ export default function DashboardHome() {
         />
         <StatCard
           title="Monthly Sales"
-          value="$18,420"
+          value="₹18,420"
           icon={DollarSign}
           trend={{ value: 5.7, isUp: true }}
         />
@@ -146,11 +146,11 @@ export default function DashboardHome() {
                   fontSize={10}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(v) => `$${v / 1000}k`}
+                  tickFormatter={(v) => `₹${v / 1000}k`}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#1A1D26", borderColor: "#2A2F3E", color: "#FFF", borderRadius: "12px", fontSize: "11px" }}
-                  formatter={(v) => [`$${Number(v).toLocaleString()}`, "Revenue"]}
+                  formatter={(v) => [`₹${Number(v).toLocaleString()}`, "Revenue"]}
                 />
                 <Area
                   type="monotone"
@@ -181,7 +181,7 @@ export default function DashboardHome() {
                   fontSize={10}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(v) => `$${v / 1000}k`}
+                  tickFormatter={(v) => `₹${v / 1000}k`}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: "#1A1D26", borderColor: "#2A2F3E", color: "#FFF", borderRadius: "12px", fontSize: "11px" }}
@@ -318,7 +318,7 @@ export default function DashboardHome() {
                     <TableCell className="text-xs font-bold text-white">{order.id}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{order.customer}</TableCell>
                     <TableCell className="text-xs text-white max-w-[150px] truncate">{order.items}</TableCell>
-                    <TableCell className="text-xs font-bold text-flownexa-lime">${order.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-xs font-bold text-flownexa-lime">₹{order.total.toFixed(2)}</TableCell>
                     <TableCell className="py-2.5">
                       <StatusBadge status={order.status} />
                     </TableCell>
@@ -403,7 +403,7 @@ export default function DashboardHome() {
               <div key={idx} className="flex flex-col gap-1.5">
                 <div className="flex justify-between text-xs font-bold">
                   <span className="text-white line-clamp-1 flex-1 pr-3">{seller.name}</span>
-                  <span className="text-flownexa-lime shrink-0">${seller.revenue.toLocaleString()}</span>
+                  <span className="text-flownexa-lime shrink-0">₹{seller.revenue.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-[9px] text-muted-foreground font-semibold">
                   <span>Rank #{idx + 1}</span>

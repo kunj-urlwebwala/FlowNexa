@@ -20,7 +20,7 @@ export default function AnnouncementBar() {
           <div className="flex items-center gap-2 justify-center w-full">
             <Sparkles size={14} className="text-flownexa-lime animate-pulse" />
             <span>
-              Get 10% off your first order with code <strong className="text-flownexa-lime font-bold">FLOWNEXA10</strong>. Free shipping over $50!
+              Get 10% off your first order with code <strong className="text-flownexa-lime font-bold">FLOWNEXA10</strong>. Free shipping over ₹500!
             </span>
           </div>
           <button

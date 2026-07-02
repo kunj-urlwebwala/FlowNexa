@@ -41,9 +41,9 @@ export default function FinancialReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Total Audited Profit" value="$63,450" icon={DollarSign} trend={{ value: 14.2, isUp: true }} variant="highlighted" />
-        <StatCard title="Operating Expenses" value="$2,430" icon={Landmark} />
-        <StatCard title="Accrued GST Reserves" value="$11,240" icon={Landmark} />
+        <StatCard title="Total Audited Profit" value="₹63,450" icon={DollarSign} trend={{ value: 14.2, isUp: true }} variant="highlighted" />
+        <StatCard title="Operating Expenses" value="₹2,430" icon={Landmark} />
+        <StatCard title="Accrued GST Reserves" value="₹11,240" icon={Landmark} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -58,7 +58,7 @@ export default function FinancialReportsPage() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#2A2F3E" vertical={false} />
               <XAxis dataKey="name" stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} />
-              <YAxis stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+              <YAxis stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
               <Tooltip contentStyle={{ backgroundColor: "#1A1D26", borderColor: "#2A2F3E", color: "#FFF", borderRadius: "12px", fontSize: "11px" }} />
               <Area type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#profitGrad)" />
             </AreaChart>
@@ -70,7 +70,7 @@ export default function FinancialReportsPage() {
             <BarChart data={mockSalesOrdersData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2A2F3E" vertical={false} />
               <XAxis dataKey="name" stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} />
-              <YAxis stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+              <YAxis stroke="#9CA3AF" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
               <Tooltip contentStyle={{ backgroundColor: "#1A1D26", borderColor: "#2A2F3E", color: "#FFF", borderRadius: "12px", fontSize: "11px" }} />
               <Legend iconSize={8} wrapperStyle={{ fontSize: "10px", paddingTop: "10px" }} />
               <Bar dataKey="sales" name="Captures" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={18} />

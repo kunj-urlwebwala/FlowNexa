@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Save } from "lucide-react";
 
 export default function HeaderConfigPage() {
-  const [announcementText, setAnnouncementText] = useState("Get 10% off your first order with code FLOWNEXA10. Free shipping over $50!");
+  const [announcementText, setAnnouncementText] = useState("Get 10% off your first order with code FLOWNEXA10. Free shipping over ₹500!");
   const [announcementUrl, setAnnouncementUrl] = useState("/shop");
 
   const handleSave = () => {

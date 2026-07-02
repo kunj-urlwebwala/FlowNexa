@@ -168,7 +168,7 @@ export default function OrderDetailPage(props: PageProps) {
               <div className="text-left sm:text-right">
                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Grand Total</p>
                 <p className="text-xl font-heading font-black text-flownexa-lime mt-0.5">
-                  ${orderRecord.total.toFixed(2)}
+                  ₹{orderRecord.total.toFixed(2)}
                 </p>
               </div>
             </CardContent>
@@ -198,10 +198,10 @@ export default function OrderDetailPage(props: PageProps) {
 
                     <div className="text-right">
                       <p className="font-bold text-xs text-white">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price * item.quantity).toFixed(2)}
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Qty: {item.quantity} × ${item.price}
+                        Qty: {item.quantity} × ₹{item.price}
                       </p>
                     </div>
                   </div>

@@ -41,7 +41,7 @@ export default function WalletPage() {
       accessorKey: "amount",
       cell: (row) => (
         <span className={`font-bold text-xs ${row.amount > 0 ? "text-emerald-400" : "text-red-400"}`}>
-          {row.amount > 0 ? "+" : ""}${row.amount.toLocaleString()}
+          {row.amount > 0 ? "+" : ""}₹{row.amount.toLocaleString()}
         </span>
       ),
       sortable: true,
@@ -69,7 +69,7 @@ export default function WalletPage() {
           onClick={() => {
             if (balance > 1000) {
               setBalance(0);
-              toast.success("Payout Requested", { description: "Settling $48,291.50 to primary bank account." });
+              toast.success("Payout Requested", { description: "Settling ₹48,291.50 to primary bank account." });
             }
           }}
           className="rounded-full bg-flownexa-lime hover:bg-flownexa-lime-hover text-flownexa-black font-semibold text-xs h-10 px-5 gap-1.5 shadow-lg shadow-flownexa-lime/10 cursor-pointer"
@@ -80,9 +80,9 @@ export default function WalletPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <StatCard title="Available Balance" value={`$${balance.toLocaleString()}`} icon={Wallet} variant="highlighted" />
-        <StatCard title="Stripe Escrow Reserve" value="$12,840" icon={DollarSign} progress={{ value: 92, label: "Reserve Limit" }} />
-        <StatCard title="Last Bank Settlement" value="$15,000" icon={Landmark} />
+        <StatCard title="Available Balance" value={`₹${balance.toLocaleString()}`} icon={Wallet} variant="highlighted" />
+        <StatCard title="Stripe Escrow Reserve" value="₹12,840" icon={DollarSign} progress={{ value: 92, label: "Reserve Limit" }} />
+        <StatCard title="Last Bank Settlement" value="₹15,000" icon={Landmark} />
       </div>
 
       <div className="bg-flownexa-surface border border-white/5 p-5 rounded-3xl">

@@ -69,6 +69,7 @@ export class AiCallsService {
           recordingUrl: null,
           callDuration: null,
           callId: null,
+          retryAfter: null,
         },
       });
     } else {
@@ -303,6 +304,14 @@ export class AiCallsService {
     const delayMs = RETRY_DELAYS_MS[currentAttempt - 1] || RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1];
 
     logger.info({ orderId, nextAttempt, delayMinutes: delayMs / 60000 }, "Scheduling retry verification call");
+    
+    // Save retryAfter timestamp when scheduling retry
+    const retryAfter = new Date(Date.now() + delayMs);
+    await prisma.verificationCall.updateMany({
+      where: { orderId },
+      data: { retryAfter },
+    });
+
     await addVerificationCallJob(orderId, nextAttempt, delayMs);
   }
 

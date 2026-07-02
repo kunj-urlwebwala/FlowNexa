@@ -8,7 +8,7 @@ export default function FAQPage() {
   const faqs = [
     {
       q: "What is FlowNexa's shipping policy?",
-      a: "We offer free standard shipping on all orders over $50 within the United States. For orders below $50, a flat shipping fee of $9.99 applies. Standard shipping takes 3-5 business days. Express shipping (1-2 business days) is available at checkout for an additional fee.",
+      a: "We offer free standard shipping on all orders over ₹500 within India. For orders below ₹500, a flat shipping fee of ₹99 applies. Standard shipping takes 3-5 business days. Express shipping (1-2 business days) is available at checkout for an additional fee.",
     },
     {
       q: "What warranty comes with FlowNexa products?",

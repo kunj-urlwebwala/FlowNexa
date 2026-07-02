@@ -37,7 +37,7 @@ export default function AIAssistantPage() {
       if (inputValue.toLowerCase().includes("stock") || inputValue.toLowerCase().includes("inventory")) {
         replyText = "Alert: MagSafe Stand (SF Logistics Center) stock count is currently 4, below minimum threshold. Dispatched Restock PO suggestion.";
       } else if (inputValue.toLowerCase().includes("payout") || inputValue.toLowerCase().includes("wallet")) {
-        replyText = "Silicon Valley Bank Checking Account wallet balances are $48,291.50. Dispatched request for automated payout schedules.";
+        replyText = "Silicon Valley Bank Checking Account wallet balances are ₹48,291.50. Dispatched request for automated payout schedules.";
       }
       
       const aiMsg: ChatMessage = {

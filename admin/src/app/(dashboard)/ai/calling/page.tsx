@@ -22,6 +22,7 @@ interface CallLogRecord {
   summary: string | null;
   recordingUrl: string | null;
   callDuration: number | null;
+  retryAfter: string | null;
   createdAt: string;
   order: {
     orderNumber: string;
@@ -44,6 +45,42 @@ interface CallStats {
   failed: number;
   pending: number;
 }
+
+const CountdownTimer = ({ retryAfter, onComplete }: { retryAfter: string; onComplete: () => void }) => {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const diff = new Date(retryAfter).getTime() - Date.now();
+      return diff > 0 ? Math.floor(diff / 1000) : 0;
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const interval = setInterval(() => {
+      const t = calculateTimeLeft();
+      setTimeLeft(t);
+      if (t <= 0) {
+        clearInterval(interval);
+        onComplete();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [retryAfter, onComplete]);
+
+  if (timeLeft <= 0) return null;
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+  return (
+    <span className="text-[10px] text-yellow-400 font-mono flex items-center gap-1 mt-0.5 animate-pulse">
+      <Clock size={10} /> Auto-retry in {formattedTime}
+    </span>
+  );
+};
 
 export default function AICallingAgentPage() {
   const [logs, setLogs] = useState<CallLogRecord[]>([]);
@@ -174,7 +211,17 @@ export default function AICallingAgentPage() {
     {
       header: "Status",
       accessorKey: "status",
-      cell: (row) => <StatusBadge status={row.status} />,
+      cell: (row) => (
+        <div className="flex flex-col text-left">
+          <StatusBadge status={row.status} />
+          {row.status === "NO_ANSWER" && row.retryAfter && (
+            <CountdownTimer
+              retryAfter={row.retryAfter}
+              onComplete={() => handleRetryCall(row.orderId)}
+            />
+          )}
+        </div>
+      ),
       sortable: true,
     },
     {
@@ -193,18 +240,16 @@ export default function AICallingAgentPage() {
           >
             View
           </Button>
-          {(row.status === "NO_ANSWER" || row.status === "FAILED") && (
-            <Button
-              variant="outline"
-              size="xs"
-              disabled={retrying === row.orderId}
-              onClick={() => handleRetryCall(row.orderId)}
-              className="h-8 rounded-lg border-white/5 bg-[#1A1D26] hover:bg-[#242836] text-xs px-3 cursor-pointer"
-            >
-              {retrying === row.orderId ? <Loader2 className="animate-spin" size={12} /> : <RefreshCcw size={12} />}
-              <span className="ml-1">Retry</span>
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="xs"
+            disabled={retrying === row.orderId}
+            onClick={() => handleRetryCall(row.orderId)}
+            className="h-8 rounded-lg border-white/5 bg-[#1A1D26] hover:bg-[#242836] text-xs px-3 cursor-pointer"
+          >
+            {retrying === row.orderId ? <Loader2 className="animate-spin" size={12} /> : <Phone size={12} />}
+            <span className="ml-1">Call Now</span>
+          </Button>
         </div>
       ),
     },
@@ -339,19 +384,19 @@ export default function AICallingAgentPage() {
             )}
 
             <div className="mt-5 flex justify-end gap-2">
-              {(activeCall.status === "NO_ANSWER" || activeCall.status === "FAILED") && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    handleRetryCall(activeCall.orderId);
-                    setDialogOpen(false);
-                  }}
-                  className="rounded-full border-white/10 text-xs cursor-pointer px-4"
-                >
-                  <RefreshCcw size={12} className="mr-1" /> Retry Call
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={retrying === activeCall.orderId}
+                onClick={() => {
+                  handleRetryCall(activeCall.orderId);
+                  setDialogOpen(false);
+                }}
+                className="rounded-full border-white/10 text-xs cursor-pointer px-4"
+              >
+                {retrying === activeCall.orderId ? <Loader2 className="animate-spin" size={12} /> : <Phone size={12} className="mr-1" />}
+                Call Now
+              </Button>
               <Button
                 size="sm"
                 onClick={() => setDialogOpen(false)}

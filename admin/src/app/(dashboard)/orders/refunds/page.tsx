@@ -40,7 +40,7 @@ export default function RefundsPage() {
     {
       header: "Refunding Amount",
       accessorKey: "amount",
-      cell: (row) => <span className="font-bold text-xs text-flownexa-lime">${row.amount.toFixed(2)}</span>,
+      cell: (row) => <span className="font-bold text-xs text-flownexa-lime">₹{row.amount.toFixed(2)}</span>,
     },
     {
       header: "Refund Channel",
@@ -62,7 +62,7 @@ export default function RefundsPage() {
               size="xs"
               onClick={() => {
                 setRefunds(refunds.map((r) => r.id === row.id ? { ...r, status: "Resolved" } : r));
-                toast.success("Refund Processed", { description: `Returned $${row.amount} to original payment credit card.` });
+                toast.success("Refund Processed", { description: `Returned ₹${row.amount} to original payment credit card.` });
               }}
               className="h-8 rounded-lg border-white/5 bg-[#1A1D26] text-emerald-400 hover:bg-[#242836] hover:text-emerald-350 text-xs px-3 cursor-pointer"
             >

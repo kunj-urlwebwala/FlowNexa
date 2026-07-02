@@ -121,7 +121,7 @@ export default function OrdersListPage() {
       accessorKey: "total",
       cell: (row) => (
         <div className="flex flex-col text-left">
-          <span className="font-bold text-xs text-flownexa-lime">${row.total.toFixed(2)}</span>
+          <span className="font-bold text-xs text-flownexa-lime">₹{row.total.toFixed(2)}</span>
           <span className="text-[9px] text-muted-foreground">{row.paymentMethod}</span>
         </div>
       ),

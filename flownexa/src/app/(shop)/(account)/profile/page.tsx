@@ -72,7 +72,7 @@ export default function ProfilePage() {
 
   const onProfileSubmit = async (data: ProfileFormData) => {
     await new Promise((resolve) => setTimeout(resolve, 800));
-    updateProfile(data);
+    await updateProfile(data);
   };
 
   const onAddressSubmit = async (data: AddressFormData) => {

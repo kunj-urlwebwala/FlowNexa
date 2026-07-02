@@ -350,6 +350,7 @@ model VerificationCall {
   summary        String?  // AI-generated call summary
   recordingUrl   String?  // Call recording URL
   callDuration   Int?     // Duration in seconds
+  retryAfter     DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

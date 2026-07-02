@@ -1,5 +1,6 @@
 import { PrismaClient, AdminRole, AdminStatus, PaymentStatus, PaymentMethod } from "@prisma/client";
 import argon2 from "argon2";
+import * as process from "process";
 
 const prisma = new PrismaClient();
 

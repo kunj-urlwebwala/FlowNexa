@@ -50,7 +50,7 @@ export default function ExpensesPage() {
     {
       header: "Billing Amount",
       accessorKey: "amount",
-      cell: (row) => <span className="font-bold text-xs text-red-400">${row.amount.toFixed(2)}</span>,
+      cell: (row) => <span className="font-bold text-xs text-red-400">₹{row.amount.toFixed(2)}</span>,
       sortable: true,
     },
     {
@@ -92,7 +92,7 @@ export default function ExpensesPage() {
               <Input id="category" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="bg-[#1A1D26] border-white/5 text-xs h-10" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="amount" className="text-xs font-semibold text-white">Amount ($)</Label>
+              <Label htmlFor="amount" className="text-xs font-semibold text-white">Amount (₹)</Label>
               <Input id="amount" type="number" step="0.01" value={newAmount} onChange={(e) => setNewAmount(Number(e.target.value))} className="bg-[#1A1D26] border-white/5 text-xs h-10" />
             </div>
             <div className="flex flex-col gap-1.5">

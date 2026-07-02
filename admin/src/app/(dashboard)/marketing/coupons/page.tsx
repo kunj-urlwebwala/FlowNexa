@@ -43,7 +43,7 @@ export default function CouponsPage() {
       accessorKey: "discountType",
       cell: (row) => (
         <span className="text-xs text-white">
-          {row.discountValue}{row.discountType.includes("Percentage") ? "%" : "$"} Off
+          {row.discountValue}{row.discountType.includes("Percentage") ? "%" : "₹"} Off
         </span>
       ),
       sortable: true,
@@ -51,7 +51,7 @@ export default function CouponsPage() {
     {
       header: "Minimum Order Amount",
       accessorKey: "minOrder",
-      cell: (row) => <span className="text-xs text-muted-foreground">${row.minOrder} Min</span>,
+      cell: (row) => <span className="text-xs text-muted-foreground">₹{row.minOrder} Min</span>,
       sortable: true,
     },
     {
@@ -124,7 +124,7 @@ export default function CouponsPage() {
               <Input id="discountValue" type="number" value={newDiscountValue} onChange={(e) => setNewDiscountValue(Number(e.target.value))} className="bg-[#1A1D26] border-white/5 text-xs h-10" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="minOrder" className="text-xs font-semibold text-white">Min Order ($)</Label>
+              <Label htmlFor="minOrder" className="text-xs font-semibold text-white">Min Order (₹)</Label>
               <Input id="minOrder" type="number" value={newMinOrder} onChange={(e) => setNewMinOrder(Number(e.target.value))} className="bg-[#1A1D26] border-white/5 text-xs h-10" />
             </div>
             <div className="flex flex-col gap-1.5">

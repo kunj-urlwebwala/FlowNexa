@@ -164,6 +164,13 @@ export class UsersService {
         phone: data.phone,
         avatar: data.avatar,
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        avatar: true,
+      },
     });
   }
 
