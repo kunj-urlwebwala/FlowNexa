@@ -31,8 +31,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  CheckCircle2,
-  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import EmptyState from "@/components/shared/EmptyState";
@@ -54,7 +52,7 @@ interface DataTableProps<T> {
   bulkActions?: {
     label: string;
     action: (selectedItems: T[]) => void;
-    icon?: any;
+    icon?: React.ComponentType<{ size?: number; className?: string }>;
     variant?: "default" | "destructive" | "outline";
   }[];
 }
@@ -106,9 +104,9 @@ export default function DataTable<T extends { id: string | number }>({
 
     // Sort order logic
     if (sortConfig.key && sortConfig.direction) {
-      result.sort((a: any, b: any) => {
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
+      result.sort((a: T, b: T) => {
+        const valA = (a as Record<string, unknown>)[sortConfig.key];
+        const valB = (b as Record<string, unknown>)[sortConfig.key];
 
         if (valA === undefined || valB === undefined) return 0;
 
@@ -158,8 +156,6 @@ export default function DataTable<T extends { id: string | number }>({
   };
 
   const isAllSelected = paginatedData.length > 0 && paginatedData.every((item) => selectedIds.has(item.id));
-  const isSomeSelected = paginatedData.length > 0 && paginatedData.some((item) => selectedIds.has(item.id)) && !isAllSelected;
-
   const handleExport = (format: "csv" | "excel" | "pdf") => {
     toast.success(`Exporting as ${format.toUpperCase()}`, {
       description: `Dispatched document with ${processedData.length} records.`,

@@ -6,8 +6,12 @@ export class MarketingController {
   // Coupons
   async listCoupons(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const coupons = await marketingService.listCoupons();
-      successResponse(res, "Coupons listed successfully", coupons);
+      const { page, limit } = req.query as any;
+      const result = await marketingService.listCoupons(
+        page ? parseInt(page, 10) : 1,
+        limit ? parseInt(limit, 10) : 20
+      );
+      successResponse(res, "Coupons listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -47,8 +51,12 @@ export class MarketingController {
   // Templates
   async listTemplates(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const templates = await marketingService.listTemplates();
-      successResponse(res, "Templates listed successfully", templates);
+      const { page, limit } = req.query as any;
+      const result = await marketingService.listTemplates(
+        page ? parseInt(page, 10) : 1,
+        limit ? parseInt(limit, 10) : 20
+      );
+      successResponse(res, "Templates listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -66,8 +74,12 @@ export class MarketingController {
   // Subscribers
   async listSubscribers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const list = await marketingService.listSubscribers();
-      successResponse(res, "Newsletter subscribers listed successfully", list);
+      const { page, limit } = req.query as any;
+      const result = await marketingService.listSubscribers(
+        page ? parseInt(page, 10) : 1,
+        limit ? parseInt(limit, 10) : 20
+      );
+      successResponse(res, "Newsletter subscribers listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

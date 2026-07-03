@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useWishlistStore } from "@/store/wishlistStore";
 import ProductCard from "@/components/product/ProductCard";
 import SectionHeader from "@/components/shared/SectionHeader";

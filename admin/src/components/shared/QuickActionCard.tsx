@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,7 @@ interface QuickActionCardProps {
   title: string;
   description: string;
   href: string;
-  icon: any;
+  icon: ComponentType<{ size?: number; className?: string }>;
   className?: string;
   external?: boolean;
 }

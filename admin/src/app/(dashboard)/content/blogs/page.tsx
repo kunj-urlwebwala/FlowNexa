@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import DataTable, { Column } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Trash2, Edit3 } from "lucide-react";
+import { Plus, Eye, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import StatusBadge from "@/components/shared/StatusBadge";

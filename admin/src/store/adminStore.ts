@@ -14,10 +14,12 @@ interface AdminState {
   notificationsOpen: boolean;
   user: AdminUser | null;
   token: string | null;
+  refreshToken: string | null;
   setSidebarExpanded: (expanded: boolean) => void;
   setSearchOpen: (open: boolean) => void;
   setNotificationsOpen: (open: boolean) => void;
   login: (email: string, password: string) => Promise<boolean>;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
 }
 
@@ -29,12 +31,14 @@ export const useAdminStore = create<AdminState>()(
       notificationsOpen: false,
       user: null,
       token: null,
+      refreshToken: null,
       setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
       setSearchOpen: (open) => set({ searchOpen: open }),
       setNotificationsOpen: (open) => set({ notificationsOpen: open }),
+      setTokens: (accessToken, refreshToken) => set({ token: accessToken, refreshToken }),
       login: async (email, password) => {
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/auth/admin/login`, {
             method: "POST",
             headers: {
@@ -51,6 +55,7 @@ export const useAdminStore = create<AdminState>()(
           set({
             user: data.data.admin,
             token: data.data.accessToken,
+            refreshToken: data.data.refreshToken,
           });
           return true;
         } catch (error) {
@@ -58,7 +63,7 @@ export const useAdminStore = create<AdminState>()(
           return false;
         }
       },
-      logout: () => set({ user: null, token: null }),
+      logout: () => set({ user: null, token: null, refreshToken: null }),
     }),
     {
       name: "flownexa-admin-store",
@@ -67,6 +72,7 @@ export const useAdminStore = create<AdminState>()(
         sidebarExpanded: state.sidebarExpanded,
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
       }),
     }
   )

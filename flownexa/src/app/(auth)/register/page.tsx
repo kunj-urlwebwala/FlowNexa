@@ -32,7 +32,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login, registerUser } = useAuthStore();
+  const { registerUser } = useAuthStore();
 
   const {
     register,
@@ -44,26 +44,21 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const success = await registerUser(data.email, data.password, data.name);
-    if (success) {
+    const result = await registerUser(data.email, data.password, data.name);
+    if (result.success) {
       toast.success("Account created successfully!", {
         description: "Welcome to FlowNexa.",
       });
       router.push("/");
     } else {
       toast.error("Registration Failed", {
-        description: "An account with this email already exists or registration details are invalid.",
+        description: result.error || "An account with this email already exists.",
       });
     }
   };
 
   const handleSocialSignUp = (provider: string) => {
-    login("social.user@flownexa.com", "Alex Mercer");
-    toast.success(`Signed up successfully via ${provider}!`);
-    router.push("/");
+    toast.info(`${provider} sign up coming soon! Please use email/password for now.`);
   };
 
   return (
@@ -155,6 +150,7 @@ export default function RegisterPage() {
           <Checkbox
             id="agree"
             disabled={isSubmitting}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onCheckedChange={(checked) => setValue("agree", checked === true ? true : (undefined as any))}
             className="border-white/20 data-[state=checked]:bg-flownexa-lime data-[state=checked]:text-flownexa-black"
           />

@@ -1,11 +1,10 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, MapPin, ClipboardList, Activity, Mail, Phone, Calendar, Loader2 } from "lucide-react";
+import { ArrowLeft, User, MapPin, ClipboardList, Mail, Phone, Calendar, Loader2 } from "lucide-react";
 import Link from "next/link";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { api } from "@/lib/api";
@@ -15,21 +14,38 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+interface UserAddress {
+  id: string;
+  fullName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+interface UserOrder {
+  id: string;
+  orderNumber: string;
+  total: number;
+  status: string;
+  createdAt: string;
+}
+
 interface UserDetailRecord {
   id: string;
   name: string;
   email: string;
   phone?: string;
   isActive: boolean;
-  addresses?: any[];
-  orders?: any[];
+  addresses?: UserAddress[];
+  orders?: UserOrder[];
   createdAt: string;
 }
 
 export default function UserDetailPage(props: PageProps) {
   const params = use(props.params);
-  const router = useRouter();
-  
   const [userRecord, setUserRecord] = useState<UserDetailRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +55,7 @@ export default function UserDetailPage(props: PageProps) {
         setLoading(true);
         const data = await api.get<UserDetailRecord>(`/users/${params.id}`);
         setUserRecord(data);
-      } catch (err: any) {
+      } catch {
         toast.error("Failed to load user profile details");
       } finally {
         setLoading(false);

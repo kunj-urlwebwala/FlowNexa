@@ -35,25 +35,60 @@ export class AiCallsService {
     // Skip if order is already past PENDING (already confirmed/cancelled)
     if (order.status !== OrderStatus.PENDING) {
       logger.info({ orderId, status: order.status }, "Order already processed, skipping verification call");
+      const existingCall = await prisma.verificationCall.findFirst({ where: { orderId }, orderBy: { createdAt: "desc" } });
+      if (existingCall) {
+        await prisma.verificationCall.update({
+          where: { id: existingCall.id },
+          data: { status: "FAILED", result: "ERROR", summary: `Call skipped - order status is ${order.status}` },
+        });
+      }
       return;
     }
 
-    // Get customer phone from shipping address or user profile
+    // Get customer phone — prefer checkout shipping address phone over profile phone
+    // (user entered this phone at checkout, so it's the most relevant for THIS order)
     const shippingAddr = order.shippingAddress as any;
     const customerPhone = shippingAddr?.phone || order.user?.phone;
+    logger.info({ orderId, shippingPhone: shippingAddr?.phone, profilePhone: order.user?.phone, finalPhone: customerPhone }, "Phone resolution for verification call");
 
     if (!customerPhone) {
       logger.error({ orderId }, "No phone number found for customer, cannot place verification call");
+      // Record the failure so the admin dashboard shows why the call didn't happen
+      const existingCall = await prisma.verificationCall.findFirst({ where: { orderId }, orderBy: { createdAt: "desc" } });
+      if (existingCall) {
+        await prisma.verificationCall.update({
+          where: { id: existingCall.id },
+          data: { status: "FAILED", result: "ERROR", summary: "No phone number found on user profile or shipping address" },
+        });
+      } else {
+        await prisma.verificationCall.create({
+          data: {
+            orderId,
+            status: "FAILED",
+            result: "ERROR",
+            summary: "No phone number found on user profile or shipping address",
+            attemptNumber,
+          },
+        });
+      }
       return;
     }
 
     // Format phone number for Bland.ai (E.164 format)
     const formattedPhone = this.formatPhoneNumber(customerPhone);
+    logger.info({ orderId, rawPhone: customerPhone, formattedPhone }, "Phone number resolved for verification call");
 
-    // Find existing verification call record for this order to reuse it
+    // Find latest verification call record for this order to reuse it
     const existingCall = await prisma.verificationCall.findFirst({
       where: { orderId },
+      orderBy: { createdAt: "desc" },
     });
+
+    // Guard: Don't overwrite a CONFIRMED or COMPLETED record
+    if (existingCall && existingCall.result === "CONFIRMED") {
+      logger.info({ orderId, callId: existingCall.id }, "Existing call already CONFIRMED, skipping new call initiation");
+      return;
+    }
 
     let callRecord;
     if (existingCall) {
@@ -141,6 +176,7 @@ export class AiCallsService {
       });
 
       const data: any = await response.json();
+      logger.info({ orderId, status: response.status, callId: data.call_id, responseOk: response.ok, responseData: data }, "Retell AI API response received");
 
       if (response.ok && data.call_id) {
         // Update call record with Retell AI call ID
@@ -148,7 +184,7 @@ export class AiCallsService {
           where: { id: callRecord.id },
           data: { callId: data.call_id },
         });
-        logger.info({ orderId, callId: data.call_id, attemptNumber }, "Retell AI verification call initiated");
+        logger.info({ orderId, callId: data.call_id, attemptNumber, toNumber: formattedPhone }, "Retell AI verification call initiated");
       } else {
         logger.error({ orderId, response: data }, "Retell AI call failed to initiate");
         await prisma.verificationCall.update({
@@ -185,12 +221,12 @@ export class AiCallsService {
     const callRecordId = metadata.callRecordId;
     const orderId = metadata.orderId;
 
-    logger.info({ event, callId, orderId }, "Received Retell AI webhook callback");
-
     // Find the call record in database
     const callRecord = callRecordId
       ? await prisma.verificationCall.findUnique({ where: { id: callRecordId } })
       : await prisma.verificationCall.findFirst({ where: { callId } });
+
+    logger.info({ event, callId, orderId, currentStatus: callRecord?.status }, "Received Retell AI webhook callback");
 
     if (!callRecord) {
       logger.warn({ callId, callRecordId }, "No matching call record found for webhook");
@@ -203,6 +239,8 @@ export class AiCallsService {
       const durationMs = call.duration_ms || 0;
       const durationSec = Math.round(durationMs / 1000);
       const disconnectionReason = call.disconnection_reason; // e.g. "dial_busy", "dial_failed", "dial_no_answer", "voicemail"
+
+      logger.info({ callId, orderId, callStatus, durationSec, disconnectionReason }, "call_ended webhook data");
 
       // If call failed to connect or wasn't answered
       const noAnswerReasons = [
@@ -241,11 +279,34 @@ export class AiCallsService {
 
         // Trigger retry logic
         await this.scheduleRetryCall(callRecord.orderId, callRecord.attemptNumber);
+      } else if (callRecord.status === "CALLING") {
+        // Fallback: call ended normally but was still in CALLING state
+        // This catches cases where disconnection reason is not in the known list
+        // e.g. carrier reject, number unreachable, etc.
+        await prisma.verificationCall.update({
+          where: { id: callRecord.id },
+          data: {
+            status: "FAILED",
+            result: "ERROR",
+            summary: `Call ended without connection. Reason: ${disconnectionReason || "unknown"}, Duration: ${durationSec}s`,
+            callDuration: durationSec,
+          },
+        });
+
+        // Trigger retry logic
+        await this.scheduleRetryCall(callRecord.orderId, callRecord.attemptNumber);
       }
     }
 
     // 2. Handle call_analyzed event (main successful conversation verification)
     if (event === "call_analyzed") {
+      // Skip analysis if call was already marked as not answered or failed
+      // This prevents NO_ANSWER/FAILED from being overwritten to DENIED
+      if (callRecord.status === "NO_ANSWER" || callRecord.status === "FAILED") {
+        logger.info({ callId, orderId, status: callRecord.status }, "Call already marked as no-answer/failed, skipping analysis");
+        return;
+      }
+
       const transcript = call.transcript || null;
       const recordingUrl = call.recording_url || null;
       const durationMs = call.duration_ms || 0;
@@ -253,10 +314,31 @@ export class AiCallsService {
 
       const analysis = call.call_analysis || {};
       const customData = analysis.custom_analysis_data || {};
+
+      // CRITICAL: If no transcript, no recording, and very short call — the call never connected
+      // Retell AI may still send call_analyzed with empty analysis for failed calls
+      // Do NOT mark as DENIED (which implies customer said no) — mark as FAILED instead
+      if (!transcript && !recordingUrl && durationSec < 5) {
+        logger.warn({ callId, orderId, durationSec, analysis }, "Call analyzed but no conversation recorded — call likely never connected");
+        await prisma.verificationCall.update({
+          where: { id: callRecord.id },
+          data: {
+            status: "FAILED",
+            result: "ERROR",
+            summary: `Call failed to connect. No conversation recorded. Duration: ${durationSec}s`,
+            callDuration: durationSec,
+          },
+        });
+        await this.scheduleRetryCall(callRecord.orderId, callRecord.attemptNumber);
+        return;
+      }
+
       const orderConfirmed = customData.order_confirmed === true || analysis.order_confirmed === true;
 
       const status = "COMPLETED";
       const result = orderConfirmed ? "CONFIRMED" : "DENIED";
+
+      logger.info({ callId, orderId, result, durationSec, hasTranscript: !!transcript }, "Call analyzed with conversation data");
 
       // Update call record
       await prisma.verificationCall.update({
@@ -401,16 +483,39 @@ export class AiCallsService {
 
   /**
    * Manually trigger a verification call for an order (admin action)
+   * Calls initiateVerificationCall directly for immediate execution (not via BullMQ queue)
    */
-  async retryCallManually(orderId: string): Promise<void> {
+  async retryCallManually(orderId: string): Promise<{ phone: string; attempt: number }> {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) throw new NotFoundError("Order not found");
 
-    // Count existing attempts
-    const existingCalls = await prisma.verificationCall.count({ where: { orderId } });
+    // Guard: Don't retry if order is already past PENDING (confirmed/cancelled)
+    if (order.status !== OrderStatus.PENDING) {
+      throw new Error(`Cannot retry — order is already ${order.status}. The verification call has already been processed.`);
+    }
 
-    // Schedule immediate call
-    await addVerificationCallJob(orderId, existingCalls + 1, 0);
+    // Get the latest call record
+    const latestCall = await prisma.verificationCall.findFirst({
+      where: { orderId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Guard: Don't retry if latest call is already CONFIRMED
+    if (latestCall?.result === "CONFIRMED") {
+      throw new Error("Cannot retry — this order has already been verified and confirmed by AI.");
+    }
+
+    const attemptNumber = (latestCall?.attemptNumber || 0) + 1;
+
+    // Call directly (not through queue) for immediate execution
+    await this.initiateVerificationCall(orderId, attemptNumber);
+
+    // Return the call record info for the response
+    const callRecord = await prisma.verificationCall.findFirst({
+      where: { orderId },
+      orderBy: { createdAt: "desc" },
+    });
+    return { phone: callRecord?.phoneNumber || "unknown", attempt: attemptNumber };
   }
 
   /**

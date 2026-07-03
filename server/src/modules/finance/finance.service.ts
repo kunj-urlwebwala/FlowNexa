@@ -42,10 +42,17 @@ export class FinanceService {
   // EXPENSES CRUD
   // ----------------------------------------------------
 
-  async listExpenses() {
-    return prisma.expense.findMany({
-      orderBy: { date: "desc" },
-    });
+  async listExpenses(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.expense.findMany({
+        skip,
+        take: limit,
+        orderBy: { date: "desc" },
+      }),
+      prisma.expense.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createExpense(data: any) {
@@ -63,10 +70,17 @@ export class FinanceService {
   // BANK ACCOUNTS CRUD
   // ----------------------------------------------------
 
-  async listBankAccounts() {
-    return prisma.bankAccount.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async listBankAccounts(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.bankAccount.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.bankAccount.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createBankAccount(data: any) {

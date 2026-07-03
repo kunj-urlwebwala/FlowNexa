@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft, ArrowRight, CreditCard, CheckCircle2, Ticket, MapPin } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
-import type { Address } from "@/types/user";
 import Logo from "@/components/shared/Logo";
 import { motion } from "framer-motion";
 import PageTransition from "@/components/shared/PageTransition";
@@ -30,9 +29,6 @@ const checkoutSchema = z.object({
   state: z.string().min(2, "Please enter your state"),
   zipCode: z.string().min(4, "Please enter a valid ZIP/Postal code"),
   country: z.string().min(2, "Please enter your country"),
-  cardNumber: z.string().optional(),
-  cardExpiry: z.string().optional(),
-  cardCvv: z.string().optional(),
 });
 
 type FormData = z.infer<typeof checkoutSchema>;
@@ -43,6 +39,10 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cart, clearCart } = useCartStore();
   const { user, isAuthenticated, addAddress } = useAuthStore();
+  const [fallbackOrderNumber] = useState(() => `FN-${Date.now()}`);
+
+  const savedAddresses = user?.addresses || [];
+  const defaultAddress = savedAddresses.find((addr) => addr.isDefault) || savedAddresses[0];
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -54,17 +54,14 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<"shipping" | "payment" | "success">("shipping");
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cod">("card");
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | "new">("new");
-
-  const savedAddresses = user?.addresses || [];
-  const defaultAddress = savedAddresses.find((addr) => addr.isDefault) || savedAddresses[0];
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "new">(defaultAddress?.id || "new");
+  const [orderResult, setOrderResult] = useState<{ id: string; orderNumber: string; total: number } | null>(null);
 
   const {
     register,
     handleSubmit,
     trigger,
     setValue,
-    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(checkoutSchema),
@@ -77,17 +74,8 @@ export default function CheckoutPage() {
       state: defaultAddress?.state || "",
       zipCode: defaultAddress?.zipCode || "",
       country: defaultAddress?.country || "United States",
-      cardNumber: "",
-      cardExpiry: "",
-      cardCvv: "",
     },
   });
-
-  useEffect(() => {
-    if (defaultAddress && selectedAddressId === "new") {
-      setSelectedAddressId(defaultAddress.id);
-    }
-  }, []);
 
   const handleAddressSelect = (addrId: string) => {
     setSelectedAddressId(addrId);
@@ -133,21 +121,6 @@ export default function CheckoutPage() {
   };
 
   const onSubmit = async (data: FormData) => {
-    if (paymentMethod === "card") {
-      if (!data.cardNumber || !/^\d{16}$/.test(data.cardNumber)) {
-        toast.error("Card number must be exactly 16 digits.");
-        return;
-      }
-      if (!data.cardExpiry || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(data.cardExpiry)) {
-        toast.error("Expiry must be in MM/YY format.");
-        return;
-      }
-      if (!data.cardCvv || !/^\d{3}$/.test(data.cardCvv)) {
-        toast.error("CVV must be exactly 3 digits.");
-        return;
-      }
-    }
-
     try {
       setIsSubmittingOrder(true);
       const orderItems = cart.items.map((item) => ({
@@ -181,10 +154,10 @@ export default function CheckoutPage() {
         items: orderItems,
       };
 
-      await api.post("/orders", payload);
+      const orderResponse = await api.post<{ id: string; orderNumber: string; total: number }>("/orders", payload);
 
       if (selectedAddressId === "new" && savedAddresses.length < MAX_ADDRESSES) {
-        addAddress({
+        await addAddress({
           fullName: data.fullName,
           phone: data.phone,
           addressLine1: data.addressLine1,
@@ -197,11 +170,14 @@ export default function CheckoutPage() {
         });
       }
 
+      // Store order details for success page
+      setOrderResult(orderResponse);
       toast.success("Order Placed Successfully! Thank you for choosing FlowNexa.");
       setStep("success");
       clearCart();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to place order");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to place order";
+      toast.error(message);
     } finally {
       setIsSubmittingOrder(false);
     }
@@ -259,11 +235,11 @@ export default function CheckoutPage() {
             <div className="w-full bg-zinc-900 border border-white/5 p-5 rounded-2xl flex justify-between text-left text-xs mb-8 divide-x divide-white/5">
               <div className="flex-1 pr-4">
                 <p className="text-muted-foreground">Order ID</p>
-                <p className="font-bold text-white mt-1">#FN-{Math.floor(100000 + Math.random() * 900000)}</p>
+                <p className="font-bold text-white mt-1">#{orderResult?.orderNumber || fallbackOrderNumber}</p>
               </div>
               <div className="flex-1 pl-6">
-                <p className="text-muted-foreground">Shipment Date</p>
-                <p className="font-bold text-white mt-1">Tomorrow, 10:00 AM</p>
+                <p className="text-muted-foreground">Total Amount</p>
+                <p className="font-bold text-flownexa-lime mt-1">₹{(orderResult?.total || 0).toFixed(2)}</p>
               </div>
             </div>
 
@@ -444,7 +420,7 @@ export default function CheckoutPage() {
 
                       <RadioGroup
                         value={paymentMethod}
-                        onValueChange={(val: any) => setPaymentMethod(val)}
+                        onValueChange={(val: string) => setPaymentMethod(val as "card" | "cod")}
                         className="grid grid-cols-2 gap-4"
                       >
                         <div className={`border rounded-2xl p-4 flex items-center gap-3 cursor-pointer select-none transition-all ${
@@ -469,23 +445,11 @@ export default function CheckoutPage() {
 
                       {paymentMethod === "card" && (
                         <div className="bg-flownexa-black border border-white/5 p-5 rounded-2xl flex flex-col gap-4">
-                          <div className="flex flex-col gap-2">
-                            <Label htmlFor="cardNumber" className="text-xs font-semibold">Card Number</Label>
-                            <Input {...register("cardNumber")} id="cardNumber" placeholder="1234567812345678" maxLength={16} className="rounded-xl bg-zinc-900 border-white/10 h-11" />
-                            {errors.cardNumber && <span className="text-xs text-red-400">{errors.cardNumber.message}</span>}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                              <Label htmlFor="cardExpiry" className="text-xs font-semibold">Expiry Date (MM/YY)</Label>
-                              <Input {...register("cardExpiry")} id="cardExpiry" placeholder="12/29" maxLength={5} className="rounded-xl bg-zinc-900 border-white/10 h-11" />
-                              {errors.cardExpiry && <span className="text-xs text-red-400">{errors.cardExpiry.message}</span>}
-                            </div>
-                            <div className="flex flex-col gap-2">
-                              <Label htmlFor="cardCvv" className="text-xs font-semibold">CVV Code</Label>
-                              <Input {...register("cardCvv")} id="cardCvv" placeholder="123" maxLength={3} className="rounded-xl bg-zinc-900 border-white/10 h-11" />
-                              {errors.cardCvv && <span className="text-xs text-red-400">{errors.cardCvv.message}</span>}
-                            </div>
+                          <div className="text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
+                            <CreditCard size={16} className="text-flownexa-lime shrink-0" />
+                            <span>
+                              You will be redirected to Stripe&apos;s secure payment page to complete your card payment after placing the order.
+                            </span>
                           </div>
                         </div>
                       )}
@@ -524,6 +488,7 @@ export default function CheckoutPage() {
                   {cart.items.map((item) => (
                     <div key={`${item.product.id}-${item.selectedColor || ""}`} className="flex gap-3 pt-3 first:pt-0">
                       <div className="size-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center p-1 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={item.product.images[0]} alt="" className="max-h-full max-w-full object-contain" />
                       </div>
                       <div className="overflow-hidden flex-1">

@@ -29,7 +29,6 @@ export default function ForgotPasswordPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsSent(true);
     toast.success("Recovery Link Dispatched", {
       description: `We've sent reset instructions to ${data.email}`,

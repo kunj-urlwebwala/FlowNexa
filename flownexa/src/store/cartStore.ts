@@ -45,7 +45,7 @@ export const useCartStore = create<CartStore>()(
             item.selectedSize === size
         );
 
-        let newItems = [...items];
+        const newItems = [...items];
 
         if (existingItemIndex > -1) {
           newItems[existingItemIndex].quantity += quantity;

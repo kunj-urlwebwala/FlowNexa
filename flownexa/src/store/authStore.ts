@@ -3,12 +3,40 @@ import { persist } from "zustand/middleware";
 import { User, Address } from "@/types/user";
 import { toast } from "sonner";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
+
+const mapAddress = (addr: {
+  id: string;
+  fullName?: string;
+  phone?: string;
+  street?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  zipCode?: string;
+  country?: string;
+  isDefault?: boolean;
+}): Address => ({
+  id: addr.id,
+  fullName: addr.fullName || "",
+  phone: addr.phone || "",
+  addressLine1: addr.street || addr.addressLine1 || "",
+  addressLine2: addr.addressLine2 || "",
+  city: addr.city || "",
+  state: addr.state || "",
+  zipCode: addr.postalCode || addr.zipCode || "",
+  country: addr.country || "",
+  isDefault: addr.isDefault || false,
+});
+
 interface AuthStore {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  registerUser: (email: string, password: string, name: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  registerUser: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   fetchProfile: () => Promise<void>;
   updateProfile: (updates: Partial<Omit<User, "id" | "email">>) => Promise<void>;
@@ -26,7 +54,6 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       login: async (email, password) => {
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/auth/login`, {
             method: "POST",
             headers: {
@@ -37,22 +64,10 @@ export const useAuthStore = create<AuthStore>()(
 
           const data = await res.json();
           if (!res.ok) {
-            return false;
+            return { success: false, error: data.message || "Invalid email or password" };
           }
 
           const user = data.data.user;
-          const mapAddress = (addr: any): Address => ({
-            id: addr.id,
-            fullName: addr.fullName,
-            phone: addr.phone,
-            addressLine1: addr.street || addr.addressLine1 || "",
-            addressLine2: addr.addressLine2 || "",
-            city: addr.city,
-            state: addr.state,
-            zipCode: addr.postalCode || addr.zipCode || "",
-            country: addr.country,
-            isDefault: addr.isDefault || false,
-          });
           const formattedUser: User = {
             id: user.id,
             name: user.name,
@@ -67,15 +82,14 @@ export const useAuthStore = create<AuthStore>()(
             user: formattedUser,
             token: data.data.accessToken,
           });
-          return true;
+          return { success: true };
         } catch (error) {
           console.error("Storefront login failed:", error);
-          return false;
+          return { success: false, error: "Network error. Please try again." };
         }
       },
       registerUser: async (email, password, name) => {
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/auth/register`, {
             method: "POST",
             headers: {
@@ -86,7 +100,7 @@ export const useAuthStore = create<AuthStore>()(
 
           const data = await res.json();
           if (!res.ok) {
-            return false;
+            return { success: false, error: data.message || "Registration failed" };
           }
 
           const user = data.data.user;
@@ -104,16 +118,15 @@ export const useAuthStore = create<AuthStore>()(
             user: formattedUser,
             token: data.data.accessToken,
           });
-          return true;
+          return { success: true };
         } catch (error) {
           console.error("Storefront registration failed:", error);
-          return false;
+          return { success: false, error: "Network error. Please try again." };
         }
       },
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
       fetchProfile: async () => {
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const { token } = get();
           if (!token) return;
 
@@ -125,18 +138,6 @@ export const useAuthStore = create<AuthStore>()(
           });
           const data = await res.json();
           if (res.ok) {
-            const mapAddress = (addr: any): Address => ({
-              id: addr.id,
-              fullName: addr.fullName,
-              phone: addr.phone,
-              addressLine1: addr.street || addr.addressLine1 || "",
-              addressLine2: addr.addressLine2 || "",
-              city: addr.city,
-              state: addr.state,
-              zipCode: addr.postalCode || addr.zipCode || "",
-              country: addr.country,
-              isDefault: addr.isDefault || false,
-            });
             const user = data.data;
             const formattedUser: User = {
               id: user.id,
@@ -151,15 +152,14 @@ export const useAuthStore = create<AuthStore>()(
               user: formattedUser,
             });
           }
-        } catch (err) {
-          console.error("Failed to fetch user profile details:", err);
+        } catch {
+          console.error("Failed to fetch user profile details:");
         }
       },
       updateProfile: async (updates) => {
         const { user, token } = get();
         if (!user || !token) return;
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/users/profile`, {
             method: "PATCH",
             headers: {
@@ -182,7 +182,7 @@ export const useAuthStore = create<AuthStore>()(
           } else {
             toast.error(data.message || "Failed to update profile details");
           }
-        } catch (err) {
+        } catch {
           toast.error("Network error occurred updating profile");
         }
       },
@@ -190,7 +190,6 @@ export const useAuthStore = create<AuthStore>()(
         const { user, token } = get();
         if (!user || !token) return;
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/users/profile/addresses`, {
             method: "POST",
             headers: {
@@ -202,18 +201,6 @@ export const useAuthStore = create<AuthStore>()(
           const data = await res.json();
           if (res.ok) {
             const currentAddresses = user.addresses || [];
-            const mapAddress = (addr: any): Address => ({
-              id: addr.id,
-              fullName: addr.fullName,
-              phone: addr.phone,
-              addressLine1: addr.street || addr.addressLine1 || "",
-              addressLine2: addr.addressLine2 || "",
-              city: addr.city,
-              state: addr.state,
-              zipCode: addr.postalCode || addr.zipCode || "",
-              country: addr.country,
-              isDefault: addr.isDefault || false,
-            });
             const newAddr = mapAddress(data.data);
 
             let updatedAddresses = [...currentAddresses];
@@ -232,7 +219,7 @@ export const useAuthStore = create<AuthStore>()(
           } else {
             toast.error(data.message || "Failed to add address");
           }
-        } catch (err) {
+        } catch {
           toast.error("Network error occurred saving address");
         }
       },
@@ -240,7 +227,6 @@ export const useAuthStore = create<AuthStore>()(
         const { user, token } = get();
         if (!user || !token) return;
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/users/profile/addresses/${id}`, {
             method: "PATCH",
             headers: {
@@ -251,18 +237,6 @@ export const useAuthStore = create<AuthStore>()(
           });
           const data = await res.json();
           if (res.ok) {
-            const mapAddress = (addr: any): Address => ({
-              id: addr.id,
-              fullName: addr.fullName,
-              phone: addr.phone,
-              addressLine1: addr.street || addr.addressLine1 || "",
-              addressLine2: addr.addressLine2 || "",
-              city: addr.city,
-              state: addr.state,
-              zipCode: addr.postalCode || addr.zipCode || "",
-              country: addr.country,
-              isDefault: addr.isDefault || false,
-            });
             let updatedAddresses = user.addresses?.map((addr) => (addr.id === id ? mapAddress(data.data) : addr)) || [];
 
             if (address.isDefault) {
@@ -282,7 +256,7 @@ export const useAuthStore = create<AuthStore>()(
           } else {
             toast.error(data.message || "Failed to update address");
           }
-        } catch (err) {
+        } catch {
           toast.error("Network error occurred updating address");
         }
       },
@@ -290,7 +264,6 @@ export const useAuthStore = create<AuthStore>()(
         const { user, token } = get();
         if (!user || !token) return;
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/users/profile/addresses/${id}`, {
             method: "DELETE",
             headers: {
@@ -310,7 +283,7 @@ export const useAuthStore = create<AuthStore>()(
             });
             toast.success("Shipping address removed successfully");
           }
-        } catch (err) {
+        } catch {
           toast.error("Network error occurred deleting address");
         }
       },
@@ -318,7 +291,6 @@ export const useAuthStore = create<AuthStore>()(
         const { user, token } = get();
         if (!user || !token) return;
         try {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
           const res = await fetch(`${API_URL}/users/profile/addresses/${id}/default`, {
             method: "PATCH",
             headers: {
@@ -338,7 +310,7 @@ export const useAuthStore = create<AuthStore>()(
             });
             toast.success("Default shipping profile updated");
           }
-        } catch (err) {
+        } catch {
           toast.error("Network error occurred updating default address");
         }
       },

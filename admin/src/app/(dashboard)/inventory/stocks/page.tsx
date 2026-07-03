@@ -14,7 +14,7 @@ interface StockRow extends AdminProductRecord {
 }
 
 export default function ProductStocksPage() {
-  const [stocks, setStocks] = useState<StockRow[]>(
+  const [stocks] = useState<StockRow[]>(
     mockAdminProducts.map((p, idx) => ({
       ...p,
       batchNo: `BT-00${idx + 1}`,

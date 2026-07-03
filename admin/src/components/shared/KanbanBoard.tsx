@@ -3,8 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Plus, ChevronRight, User, Phone, Mail } from "lucide-react";
-import StatusBadge from "./StatusBadge";
+import { Plus, ChevronRight, Phone, Mail } from "lucide-react";
 
 export interface KanbanCard {
   id: string;

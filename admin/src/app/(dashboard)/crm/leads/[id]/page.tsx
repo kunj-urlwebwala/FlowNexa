@@ -3,7 +3,7 @@
 import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, User, Phone, Mail, FileText, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, User, Phone, Mail } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import Timeline from "@/components/shared/Timeline";

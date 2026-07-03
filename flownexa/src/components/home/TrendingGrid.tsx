@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Flame, ShoppingBag } from "lucide-react";
+import { Flame, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import PriceDisplay from "@/components/shared/PriceDisplay";

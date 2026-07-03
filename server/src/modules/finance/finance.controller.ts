@@ -15,8 +15,10 @@ export class FinanceController {
   // Expenses
   async listExpenses(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const expenses = await financeService.listExpenses();
-      successResponse(res, "Expenses listed successfully", expenses);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await financeService.listExpenses(page, limit);
+      successResponse(res, "Expenses listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -34,8 +36,10 @@ export class FinanceController {
   // Bank Accounts
   async listAccounts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const accounts = await financeService.listBankAccounts();
-      successResponse(res, "Bank accounts listed successfully", accounts);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await financeService.listBankAccounts(page, limit);
+      successResponse(res, "Bank accounts listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

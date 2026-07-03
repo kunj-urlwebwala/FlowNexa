@@ -14,6 +14,18 @@ export class OrdersController {
     }
   }
 
+  async getMyOrders(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.userId as string;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await ordersService.getMyOrders(userId, page, limit);
+      successResponse(res, "Orders listed successfully", result.orders, 200, result.meta);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { page, limit, status, paymentStatus, search } = req.query as any;
@@ -32,7 +44,11 @@ export class OrdersController {
 
   async getOne(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const order = await ordersService.getOrderById(req.params.id as string);
+      const orderId = req.params.id as string;
+      // For customers (non-admin roles), verify order ownership
+      const userRole = req.user?.role;
+      const isAdmin = userRole && userRole !== "CUSTOMER";
+      const order = await ordersService.getOrderById(orderId, isAdmin ? undefined : req.user?.userId);
       successResponse(res, "Order details retrieved successfully", order);
     } catch (error) {
       next(error);
@@ -54,9 +70,21 @@ export class OrdersController {
   }
 
   // Returns, Refunds, Cancellation Reason Codes
+  async listReturns(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { page, limit } = req.query as any;
+      const result = await ordersService.listReturns(page || 1, limit || 20);
+      successResponse(res, "Returns listed successfully", result.returns, 200, result.meta);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async createReturn(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const returnRequest = await ordersService.createReturnRequest(req.body);
+      const userRole = req.user?.role;
+      const isAdmin = userRole && userRole !== "CUSTOMER";
+      const returnRequest = await ordersService.createReturnRequest(req.body, isAdmin ? undefined : req.user?.userId);
       successResponse(res, "Return request created successfully", returnRequest, 201);
     } catch (error) {
       next(error);

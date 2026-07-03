@@ -56,9 +56,32 @@ export class AuthController {
    */
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // In a stateless JWT system, client deletes the token.
-      // We can also blacklist it in Redis if needed.
       successResponse(res, "Logged out successfully", null);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Forgot Password - Send reset link
+   */
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.forgotPassword(req.body.email);
+      successResponse(res, result.message, null);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Reset Password - Set new password
+   */
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId, token, password } = req.body;
+      const result = await authService.resetPassword(userId, token, password);
+      successResponse(res, result.message, null);
     } catch (error) {
       next(error);
     }

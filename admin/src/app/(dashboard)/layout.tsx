@@ -21,7 +21,7 @@ export default function DashboardLayout({
     if (!user) {
       router.push("/login");
     } else {
-      setLoading(false);
+      setLoading(false); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [user, router]);
 

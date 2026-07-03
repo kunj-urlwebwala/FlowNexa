@@ -6,10 +6,13 @@ export class MarketingService {
   // COUPONS
   // ----------------------------------------------------
 
-  async listCoupons() {
-    return prisma.coupon.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async listCoupons(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.coupon.findMany({ skip, take: limit, orderBy: { createdAt: "desc" } }),
+      prisma.coupon.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createCoupon(data: any) {
@@ -61,10 +64,13 @@ export class MarketingService {
   // EMAIL TEMPLATES
   // ----------------------------------------------------
 
-  async listTemplates() {
-    return prisma.emailTemplate.findMany({
-      orderBy: { name: "asc" },
-    });
+  async listTemplates(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.emailTemplate.findMany({ skip, take: limit, orderBy: { name: "asc" } }),
+      prisma.emailTemplate.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createTemplate(data: any) {
@@ -92,10 +98,13 @@ export class MarketingService {
   // NEWSLETTER SUBSCRIBERS
   // ----------------------------------------------------
 
-  async listSubscribers() {
-    return prisma.newsletterSubscriber.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async listSubscribers(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.newsletterSubscriber.findMany({ skip, take: limit, orderBy: { createdAt: "desc" } }),
+      prisma.newsletterSubscriber.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async addSubscriber(email: string) {

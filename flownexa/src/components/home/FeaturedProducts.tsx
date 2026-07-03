@@ -6,8 +6,6 @@ import ProductCard from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
-
 export default function FeaturedProducts() {
   const featured = products.filter((product) => product.featured).slice(0, 4);
 

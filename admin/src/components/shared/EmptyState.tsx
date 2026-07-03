@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -8,7 +9,7 @@ interface EmptyStateProps {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
-  icon?: any;
+  icon?: ComponentType<{ size?: number; className?: string }>;
 }
 
 export default function EmptyState({

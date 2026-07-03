@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Globe } from "lucide-react";
+import { Save, Trash2, Globe } from "lucide-react";
 import MediaUploader from "@/components/shared/MediaUploader";
 
 interface SocialLink {

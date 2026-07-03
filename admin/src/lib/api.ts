@@ -1,7 +1,49 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
 
 interface RequestOptions extends RequestInit {
   bodyData?: unknown;
+}
+
+function getStoreState() {
+  const storeData = localStorage.getItem("flownexa-admin-store");
+  if (!storeData) return null;
+  try {
+    return JSON.parse(storeData)?.state || null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshAccessToken(): Promise<{ accessToken: string; refreshToken: string } | null> {
+  const state = getStoreState();
+  const refreshToken = state?.refreshToken;
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.data;
+  } catch {
+    return null;
+  }
+}
+
+function saveTokens(accessToken: string, refreshToken: string) {
+  const storeData = localStorage.getItem("flownexa-admin-store");
+  if (!storeData) return;
+  try {
+    const parsed = JSON.parse(storeData);
+    parsed.state.token = accessToken;
+    parsed.state.refreshToken = refreshToken;
+    localStorage.setItem("flownexa-admin-store", JSON.stringify(parsed));
+  } catch {
+    // Ignored
+  }
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -14,17 +56,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   // Attach token from localStorage
-  const storeData = localStorage.getItem("flownexa-admin-store");
-  if (storeData) {
-    try {
-      const parsed = JSON.parse(storeData);
-      const token = parsed?.state?.token;
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-    } catch {
-      // Ignored
-    }
+  const state = getStoreState();
+  if (state?.token) {
+    headers.set("Authorization", `Bearer ${state.token}`);
   }
 
   const config: RequestInit = {
@@ -36,11 +70,21 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     config.body = JSON.stringify(options.bodyData);
   }
 
-  const response = await fetch(url, config);
+  let response = await fetch(url, config);
 
-  // Handle unauthorized (expired token)
+  // Handle unauthorized (expired token) — try to refresh
+  if (response.status === 401 && !path.includes("/auth/")) {
+    const tokens = await refreshAccessToken();
+    if (tokens) {
+      saveTokens(tokens.accessToken, tokens.refreshToken);
+      headers.set("Authorization", `Bearer ${tokens.accessToken}`);
+      config.headers = headers;
+      response = await fetch(url, config);
+    }
+  }
+
+  // If still unauthorized after refresh, redirect to login
   if (response.status === 401) {
-    // If not on login page, redirect to login
     if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
       localStorage.removeItem("flownexa-admin-store");
       window.location.href = "/login";
@@ -55,7 +99,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       : "Something went wrong";
 
     if (result && typeof result === "object" && Array.isArray(result.errors) && result.errors.length > 0) {
-      const details = result.errors.map((e: any) => `${e.field}: ${e.message}`).join(", ");
+      const details = result.errors.map((e: { field: string; message: string }) => `${e.field}: ${e.message}`).join(", ");
       errorMsg += ` (${details})`;
     }
     throw new Error(errorMsg);

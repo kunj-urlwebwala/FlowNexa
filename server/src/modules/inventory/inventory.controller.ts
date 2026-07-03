@@ -6,8 +6,9 @@ export class InventoryController {
   // Warehouses
   async listWarehouses(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const warehouses = await inventoryService.listWarehouses();
-      successResponse(res, "Warehouses listed successfully", warehouses);
+      const { page, limit } = req.query as any;
+      const result = await inventoryService.listWarehouses(page || 1, limit || 20);
+      successResponse(res, "Warehouses listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -61,8 +62,9 @@ export class InventoryController {
 
   async listLedger(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const ledger = await inventoryService.listStockLedger();
-      successResponse(res, "Stock ledger retrieved successfully", ledger);
+      const { page, limit } = req.query as any;
+      const result = await inventoryService.listStockLedger(page || 1, limit || 20);
+      successResponse(res, "Stock ledger retrieved successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -71,8 +73,9 @@ export class InventoryController {
   // Audits
   async listAudits(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const audits = await inventoryService.listAudits();
-      successResponse(res, "Stock audits listed successfully", audits);
+      const { page, limit } = req.query as any;
+      const result = await inventoryService.listAudits(page || 1, limit || 20);
+      successResponse(res, "Stock audits listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -99,8 +102,9 @@ export class InventoryController {
   // Restocking requests
   async listRestock(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const requests = await inventoryService.listRestockRequests();
-      successResponse(res, "Restock requests listed successfully", requests);
+      const { page, limit } = req.query as any;
+      const result = await inventoryService.listRestockRequests(page || 1, limit || 20);
+      successResponse(res, "Restock requests listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -127,8 +131,9 @@ export class InventoryController {
   // Damaged stock
   async listDamaged(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const list = await inventoryService.listDamagedStock();
-      successResponse(res, "Damaged stock register listed successfully", list);
+      const { page, limit } = req.query as any;
+      const result = await inventoryService.listDamagedStock(page || 1, limit || 20);
+      successResponse(res, "Damaged stock register listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

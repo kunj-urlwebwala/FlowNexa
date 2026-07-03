@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminStore } from "@/store/adminStore";
 import {
@@ -21,9 +21,7 @@ import {
   Wallet,
   Settings,
   Bot,
-  Search,
   Newspaper,
-  Compass,
 } from "lucide-react";
 
 export default function CommandPalette() {

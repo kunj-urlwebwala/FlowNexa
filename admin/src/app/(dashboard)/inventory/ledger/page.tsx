@@ -2,8 +2,6 @@
 
 import React, { useState } from "react";
 import DataTable, { Column } from "@/components/data-table/DataTable";
-import StatusBadge from "@/components/shared/StatusBadge";
-
 interface LedgerRecord {
   id: string;
   productName: string;
@@ -15,7 +13,7 @@ interface LedgerRecord {
 }
 
 export default function StockLedgerPage() {
-  const [logs, setLogs] = useState<LedgerRecord[]>([
+  const [logs] = useState<LedgerRecord[]>([
     { id: "LOG-5810", productName: "Sequoia Headphones", type: "Restock Fulfillment", adjustment: "+50 Units", operator: "Alex Mercer", timestamp: "June 30, 09:30 AM", warehouse: "SF Logistics" },
     { id: "LOG-5809", productName: "X-Buds Pro Wireless", type: "Fulfillment Allocation", adjustment: "-2 Units", operator: "System Dispatcher", timestamp: "June 29, 04:00 PM", warehouse: "NY East Hub" },
     { id: "LOG-5808", productName: "Orizon VR Headset", type: "Fulfillment Allocation", adjustment: "-1 Unit", operator: "System Dispatcher", timestamp: "June 29, 08:30 PM", warehouse: "SF Logistics" },

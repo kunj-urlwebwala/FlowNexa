@@ -5,7 +5,7 @@ import ChartCard from "@/components/shared/ChartCard";
 import StatCard from "@/components/shared/StatCard";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from "recharts";
 import { mockRevenueData, mockSalesOrdersData } from "@/data/dashboard";
-import { DollarSign, Landmark, ArrowUpRight, TrendingUp } from "lucide-react";
+import { DollarSign, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

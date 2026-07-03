@@ -19,7 +19,7 @@ export default function AuthLayout({
     if (user) {
       router.push("/");
     } else {
-      setLoading(false);
+      setLoading(false); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [user, router]);
 

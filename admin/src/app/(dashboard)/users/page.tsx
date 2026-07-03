@@ -30,18 +30,18 @@ export default function UsersListPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await api.get<any[]>("/users");
+      const data = await api.get<Record<string, unknown>[]>("/users");
       
       // Map API user record to UI record
       const mapped: UserRecord[] = data.map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        phone: u.phone || "",
+        id: u.id as string,
+        name: u.name as string,
+        email: u.email as string,
+        phone: (u.phone as string) || "",
         role: "Customer",
-        status: u.isActive ? "Active" : "Inactive",
+        status: (u.isActive as boolean) ? "Active" : "Inactive",
         ordersCount: 0, // dynamic count could be loaded or default 0
-        joinedDate: new Date(u.createdAt).toLocaleDateString("en-US", {
+        joinedDate: new Date(u.createdAt as string).toLocaleDateString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -49,9 +49,9 @@ export default function UsersListPage() {
       }));
       
       setUsersList(mapped);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to load user directory", {
-        description: err.message,
+        description: err instanceof Error ? err.message : String(err),
       });
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ export default function UsersListPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
   const handleDeactivate = (user: UserRecord) => {
@@ -85,9 +85,9 @@ export default function UsersListPage() {
       toast.success(isActive ? "User Activated" : "User Suspended", {
         description: `${activeUser.name} status updated successfully.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to update user status", {
-        description: err.message,
+        description: err instanceof Error ? err.message : String(err),
       });
     }
   };
@@ -169,9 +169,9 @@ export default function UsersListPage() {
           const idsToDelete = new Set(items.map((i) => i.id));
           setUsersList(usersList.filter((u) => !idsToDelete.has(u.id)));
           toast.success("Accounts deleted successfully");
-        } catch (err: any) {
+        } catch (err: unknown) {
           toast.error("Failed to delete some accounts", {
-            description: err.message,
+            description: err instanceof Error ? err.message : String(err),
           });
         }
       },

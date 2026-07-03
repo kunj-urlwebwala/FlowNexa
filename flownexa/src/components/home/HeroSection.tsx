@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Play, Sparkles, Twitter, Instagram, Linkedin, Github } from "lucide-react";
+import { ArrowRight, Play, Sparkles, Twitter, Instagram, Linkedin } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 

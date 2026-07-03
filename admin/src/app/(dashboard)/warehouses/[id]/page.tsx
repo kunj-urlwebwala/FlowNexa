@@ -3,8 +3,9 @@
 import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Warehouse, MapPin, PackageOpen, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Warehouse, MapPin } from "lucide-react";
 import Link from "next/link";
+import type { AdminProductRecord } from "@/data/admin-products";
 import { mockAdminProducts } from "@/data/admin-products";
 import DataTable, { Column } from "@/components/data-table/DataTable";
 
@@ -27,7 +28,7 @@ export default function WarehouseDetailPage(props: PageProps) {
     (p) => p.warehouse.toLowerCase().includes(wh.name.split(" ")[0].toLowerCase())
   );
 
-  const columns: Column<any>[] = [
+  const columns: Column<AdminProductRecord>[] = [
     {
       header: "Product",
       accessorKey: "name",

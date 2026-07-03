@@ -3,17 +3,17 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ShoppingBag, CreditCard, Heart, CheckCircle2, ShieldCheck, RefreshCw } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CreditCard, Heart, CheckCircle2, ShieldCheck, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { products } from "@/data/products";
+import { motion } from "framer-motion";
+import { api } from "@/lib/api";
+import { Product } from "@/types/product";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import StarRating from "@/components/shared/StarRating";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import QuantityStepper from "@/components/shared/QuantityStepper";
 import PageTransition from "@/components/shared/PageTransition";
-import ProductCard from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,9 +30,25 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
   const { addItem } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
 
-  const product = products.find((p) => p.slug === slug);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // States
+  // Fetch product from API
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const data = await api.get<Product>(`/products/${slug}`);
+        setProduct(data);
+      } catch {
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [slug]);
+
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
@@ -40,15 +56,19 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
 
   useEffect(() => {
     if (product) {
-      if (product.images?.[0]) setActiveImage(product.images[0]);
-      if (product.colors && product.colors.length > 0) {
-        setSelectedColor(product.colors[0]);
-      }
-      if (product.sizes && product.sizes.length > 0) {
-        setSelectedSize(product.sizes[0]);
-      }
+      if (product.images?.[0]) setActiveImage(product.images[0]); // eslint-disable-line react-hooks/set-state-in-effect
+      if (product.colors && product.colors.length > 0) setSelectedColor(product.colors[0]);
+      if (product.sizes && product.sizes.length > 0) setSelectedSize(product.sizes[0]);
     }
   }, [product]);
+
+  if (loading) {
+    return (
+      <div className="bg-flownexa-black text-white min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-flownexa-lime size-8" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -89,11 +109,6 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     }
   };
 
-  // Find related products (same category, excluding current)
-  const relatedProducts = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
-
   return (
     <PageTransition>
       <div className="bg-flownexa-black text-white py-8 md:py-12 font-sans">
@@ -123,6 +138,7 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
                   className="size-full flex items-center justify-center relative select-none"
                 >
                   {activeImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={activeImage}
                       alt={product.name}
@@ -381,18 +397,6 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
               </TabsContent>
             </Tabs>
           </div>
-
-          {/* Related Products Carousel */}
-          {relatedProducts.length > 0 && (
-            <div className="mt-20 md:mt-28 pt-10 border-t border-white/5">
-              <h3 className="font-heading font-bold text-xl mb-8">You May Also Like</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedProducts.map((prod) => (
-                  <ProductCard key={prod.id} product={prod} />
-                ))}
-              </div>
-            </div>
-          )}
 
         </div>
       </div>

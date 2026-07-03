@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Printer, Ship, FileText, CheckCircle2, User, Mail, Phone, MapPin, Loader2, Activity } from "lucide-react";
+import { ArrowLeft, Printer, Ship, FileText, CheckCircle2, User, MapPin, Loader2, Activity } from "lucide-react";
 import Link from "next/link";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Timeline from "@/components/shared/Timeline";
@@ -13,6 +13,28 @@ import { api } from "@/lib/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+interface ShippingAddress {
+  fullName: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+interface OrderUser {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+interface OrderItem {
+  productName: string;
+  sku: string;
+  price: number;
+  quantity: number;
 }
 
 interface OrderDetailRecord {
@@ -26,9 +48,9 @@ interface OrderDetailRecord {
   shippingCharges: number;
   discount: number;
   total: number;
-  shippingAddress: any;
-  user: any;
-  items: any[];
+  shippingAddress: ShippingAddress;
+  user: OrderUser;
+  items: OrderItem[];
   createdAt: string;
 }
 
@@ -43,7 +65,7 @@ export default function OrderDetailPage(props: PageProps) {
       setLoading(true);
       const data = await api.get<OrderDetailRecord>(`/orders/${params.id}`);
       setOrderRecord(data);
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to load order invoice details");
     } finally {
       setLoading(false);
@@ -51,8 +73,8 @@ export default function OrderDetailPage(props: PageProps) {
   };
 
   useEffect(() => {
-    loadOrder();
-  }, [params.id]);
+    loadOrder(); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [params.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -292,7 +314,7 @@ export default function OrderDetailPage(props: PageProps) {
                       await api.patch(`/orders/${orderRecord.id}/status`, { status: "SHIPPED" });
                       toast.success(`Carrier updated — pickup scheduled for ${orderRecord.orderNumber} via ${carrier}.`);
                       loadOrder(); // reload
-                    } catch (err: any) {
+                    } catch {
                       toast.error("Failed to assign carrier");
                     }
                   }}

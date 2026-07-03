@@ -4,8 +4,6 @@ import Link from "next/link";
 import Logo from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import { Compass, ArrowRight } from "lucide-react";
-import PageTransition from "@/components/shared/PageTransition";
-
 export default function NotFound() {
   return (
     <div className="bg-flownexa-black text-white min-h-screen font-sans flex flex-col justify-between p-6 md:p-8">

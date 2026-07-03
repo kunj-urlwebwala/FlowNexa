@@ -10,7 +10,6 @@ import {
   Trash2,
   UserX,
   UserCheck,
-  ShieldCheck,
   Mail,
   User,
   KeyRound,
@@ -317,7 +316,7 @@ export default function TeamManagementPage() {
                   <select
                     id="role"
                     value={newRole}
-                    onChange={(e) => setNewRole(e.target.value as any)}
+                    onChange={(e) => setNewRole(e.target.value as TeamMember["role"])}
                     className="w-full bg-[#14161F] border border-white/5 text-xs text-white rounded-lg p-2.5 outline-none focus:border-flownexa-lime h-10 cursor-pointer"
                   >
                     {teamRoles.map((role) => (

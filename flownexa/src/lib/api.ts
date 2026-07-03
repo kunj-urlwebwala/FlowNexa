@@ -54,7 +54,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       : "Something went wrong";
 
     if (result && typeof result === "object" && Array.isArray(result.errors) && result.errors.length > 0) {
-      const details = result.errors.map((e: any) => `${e.field}: ${e.message}`).join(", ");
+      const details = result.errors.map((e: { field: string; message: string }) => `${e.field}: ${e.message}`).join(", ");
       errorMsg += ` (${details})`;
     }
     throw new Error(errorMsg);

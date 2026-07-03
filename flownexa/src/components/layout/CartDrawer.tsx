@@ -109,21 +109,21 @@ export default function CartDrawer() {
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal</span>
-                  <span>${cart.subtotal.toFixed(2)}</span>
+                  <span>₹{cart.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Shipping</span>
-                  <span>{cart.shipping === 0 ? "FREE" : `$${cart.shipping.toFixed(2)}`}</span>
+                  <span>{cart.shipping === 0 ? "FREE" : `₹${cart.shipping.toFixed(2)}`}</span>
                 </div>
                 {cart.discount > 0 && (
                   <div className="flex justify-between text-sm text-flownexa-lime">
                     <span>Discount</span>
-                    <span>-${cart.discount.toFixed(2)}</span>
+                    <span>-₹{cart.discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold text-lg text-white pt-2 border-t border-white/5 mt-2">
                   <span>Total</span>
-                  <span>${cart.total.toFixed(2)}</span>
+                  <span>₹{cart.total.toFixed(2)}</span>
                 </div>
               </div>
 

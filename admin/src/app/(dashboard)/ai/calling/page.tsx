@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import DataTable, { Column } from "@/components/data-table/DataTable";
 import StatCard from "@/components/shared/StatCard";
 import { Button } from "@/components/ui/button";
-import { Bot, Phone, Play, CheckCircle2, XCircle, PhoneOff, AlertTriangle, Loader2, RefreshCcw, Clock } from "lucide-react";
+import { Bot, Phone, CheckCircle2, XCircle, PhoneOff, AlertTriangle, Loader2, RefreshCcw, Clock } from "lucide-react";
 import { toast } from "sonner";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -55,7 +55,7 @@ const CountdownTimer = ({ retryAfter, onComplete }: { retryAfter: string; onComp
       return diff > 0 ? Math.floor(diff / 1000) : 0;
     };
 
-    setTimeLeft(calculateTimeLeft());
+    setTimeLeft(calculateTimeLeft()); // eslint-disable-line react-hooks/set-state-in-effect
 
     const interval = setInterval(() => {
       const t = calculateTimeLeft();
@@ -89,6 +89,7 @@ export default function AICallingAgentPage() {
   const [activeCall, setActiveCall] = useState<CallLogRecord | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -99,26 +100,36 @@ export default function AICallingAgentPage() {
       ]);
       setLogs(callsData || []);
       setStats(statsData || { total: 0, completed: 0, confirmed: 0, noAnswer: 0, failed: 0, pending: 0 });
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load AI call data");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadData();
+    loadData(); // eslint-disable-line react-hooks/set-state-in-effect
+
+    // Auto-refresh every 15 seconds for real-time updates
+    pollRef.current = setInterval(() => {
+      loadData();
+    }, 15000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [loadData]);
 
   const handleRetryCall = async (orderId: string) => {
     try {
       setRetrying(orderId);
-      await api.post(`/ai-calls/retry/${orderId}`);
-      toast.success("AI verification call scheduled — will be placed shortly.");
-      // Refresh data after a short delay
-      setTimeout(loadData, 2000);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to schedule retry call");
+      const result = await api.post<{ phone?: string }>(`/ai-calls/retry/${orderId}`);
+      toast.success(`Call initiated to ${result?.phone || "customer"} — should ring shortly.`);
+      // Refresh data after a short delay to pick up webhook updates
+      setTimeout(loadData, 3000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to initiate retry call";
+      toast.error(message);
     } finally {
       setRetrying(null);
     }
@@ -243,12 +254,12 @@ export default function AICallingAgentPage() {
           <Button
             variant="outline"
             size="xs"
-            disabled={retrying === row.orderId}
+            disabled={retrying === row.orderId || row.result === "CONFIRMED" || row.order?.status === "PROCESSING"}
             onClick={() => handleRetryCall(row.orderId)}
             className="h-8 rounded-lg border-white/5 bg-[#1A1D26] hover:bg-[#242836] text-xs px-3 cursor-pointer"
           >
             {retrying === row.orderId ? <Loader2 className="animate-spin" size={12} /> : <Phone size={12} />}
-            <span className="ml-1">Call Now</span>
+            <span className="ml-1">{row.result === "CONFIRMED" ? "Verified" : "Call Now"}</span>
           </Button>
         </div>
       ),
@@ -262,7 +273,7 @@ export default function AICallingAgentPage() {
       <div className="flex justify-between items-center select-none">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold font-heading text-white">AI Voice Calling Dashboard</h1>
-          <p className="text-xs text-muted-foreground">Monitor autonomous order verification calls, transcripts, and retry schedules.</p>
+          <p className="text-xs text-muted-foreground">Monitor autonomous order verification calls, transcripts, and retry schedules. Auto-refreshes every 15s.</p>
         </div>
         <Button
           onClick={loadData}
@@ -387,7 +398,7 @@ export default function AICallingAgentPage() {
               <Button
                 size="sm"
                 variant="outline"
-                disabled={retrying === activeCall.orderId}
+                disabled={retrying === activeCall.orderId || activeCall.result === "CONFIRMED"}
                 onClick={() => {
                   handleRetryCall(activeCall.orderId);
                   setDialogOpen(false);
@@ -395,7 +406,7 @@ export default function AICallingAgentPage() {
                 className="rounded-full border-white/10 text-xs cursor-pointer px-4"
               >
                 {retrying === activeCall.orderId ? <Loader2 className="animate-spin" size={12} /> : <Phone size={12} className="mr-1" />}
-                Call Now
+                {activeCall.result === "CONFIRMED" ? "Already Verified" : "Call Now"}
               </Button>
               <Button
                 size="sm"

@@ -28,7 +28,7 @@ export default function NewsletterCTA() {
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async () => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
     setIsLoading(false);

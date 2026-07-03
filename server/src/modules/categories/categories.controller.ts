@@ -6,8 +6,10 @@ export class CategoriesController {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const parentOnly = req.query.parentOnly === "true";
-      const categories = await categoriesService.listCategories({ parentOnly });
-      successResponse(res, "Categories listed successfully", categories);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await categoriesService.listCategories({ parentOnly }, page, limit);
+      successResponse(res, "Categories listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

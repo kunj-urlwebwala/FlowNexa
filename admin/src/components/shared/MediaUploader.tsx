@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, X, Image as ImageIcon, FileText } from "lucide-react";
+import { UploadCloud, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MediaUploaderProps {

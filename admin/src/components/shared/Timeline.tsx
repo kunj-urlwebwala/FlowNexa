@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Clock } from "lucide-react";
 
@@ -8,7 +9,7 @@ interface TimelineItem {
   description?: string;
   timestamp: string;
   isCompleted?: boolean;
-  icon?: any;
+  icon?: ComponentType<{ size?: number; className?: string }>;
 }
 
 interface TimelineProps {

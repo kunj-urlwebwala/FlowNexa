@@ -21,14 +21,12 @@ import { cn } from "@/lib/utils";
 interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
-  placeholder?: string;
   className?: string;
 }
 
 export default function RichTextEditor({
   content,
   onChange,
-  placeholder = "Write description here...",
   className,
 }: RichTextEditorProps) {
   const editor = useEditor({

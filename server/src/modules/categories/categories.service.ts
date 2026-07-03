@@ -6,24 +6,31 @@ export class CategoriesService {
   /**
    * List categories (roots or all nested)
    */
-  async listCategories(query: { parentOnly?: boolean }) {
+  async listCategories(query: { parentOnly?: boolean }, page = 1, limit = 20) {
     const where: any = {};
     if (query.parentOnly) {
       where.parentId = null;
     }
 
-    const categories = await prisma.category.findMany({
-      where,
-      include: {
-        subCategories: true,
-        parent: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: { name: "asc" },
-    });
+    const skip = (page - 1) * limit;
 
-    return categories;
+    const [items, total] = await Promise.all([
+      prisma.category.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          subCategories: true,
+          parent: {
+            select: { id: true, name: true },
+          },
+        },
+        orderBy: { name: "asc" },
+      }),
+      prisma.category.count({ where }),
+    ]);
+
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   /**

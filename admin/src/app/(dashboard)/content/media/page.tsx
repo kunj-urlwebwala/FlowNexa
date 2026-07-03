@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import MediaUploader from "@/components/shared/MediaUploader";
-import { Button } from "@/components/ui/button";
-import { FileImage, Film, FileText, Trash2 } from "lucide-react";
+import { Film, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface MediaItem {

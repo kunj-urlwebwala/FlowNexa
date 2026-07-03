@@ -6,8 +6,13 @@ export class CmsService {
   // ----------------------------------------------------
   // BLOG CATEGORIES
   // ----------------------------------------------------
-  async listBlogCategories() {
-    return prisma.blogCategory.findMany({ orderBy: { name: "asc" } });
+  async listBlogCategories(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.blogCategory.findMany({ skip, take: limit, orderBy: { name: "asc" } }),
+      prisma.blogCategory.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createBlogCategory(data: any) {
@@ -23,16 +28,23 @@ export class CmsService {
   // ----------------------------------------------------
   // BLOG POSTS
   // ----------------------------------------------------
-  async listBlogPosts(query: { publishedOnly?: boolean }) {
+  async listBlogPosts(query: { publishedOnly?: boolean }, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
     const where: any = {};
     if (query.publishedOnly) {
       where.isPublished = true;
     }
-    return prisma.blogPost.findMany({
-      where,
-      include: { category: { select: { id: true, name: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+    const [items, total] = await Promise.all([
+      prisma.blogPost.findMany({
+        skip,
+        take: limit,
+        where,
+        include: { category: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.blogPost.count({ where }),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async getBlogPost(idOrSlug: string) {
@@ -89,8 +101,13 @@ export class CmsService {
   // ----------------------------------------------------
   // TESTIMONIALS
   // ----------------------------------------------------
-  async listTestimonials() {
-    return prisma.testimonial.findMany({ orderBy: { createdAt: "desc" } });
+  async listTestimonials(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.testimonial.findMany({ skip, take: limit, orderBy: { createdAt: "desc" } }),
+      prisma.testimonial.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createTestimonial(data: any) {
@@ -105,8 +122,13 @@ export class CmsService {
   // ----------------------------------------------------
   // FAQ SETUP
   // ----------------------------------------------------
-  async listFaqs() {
-    return prisma.fAQ.findMany({ orderBy: { category: "asc" } });
+  async listFaqs(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.fAQ.findMany({ skip, take: limit, orderBy: { category: "asc" } }),
+      prisma.fAQ.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createFaq(data: any) {
@@ -121,8 +143,13 @@ export class CmsService {
   // ----------------------------------------------------
   // DYNAMIC PAGES
   // ----------------------------------------------------
-  async listPages() {
-    return prisma.websitePage.findMany({ orderBy: { title: "asc" } });
+  async listPages(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.websitePage.findMany({ skip, take: limit, orderBy: { title: "asc" } }),
+      prisma.websitePage.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async getPageBySlug(slug: string) {
@@ -153,8 +180,13 @@ export class CmsService {
   // ----------------------------------------------------
   // SEO METADATA
   // ----------------------------------------------------
-  async listSeoConfigs() {
-    return prisma.sEOMetadata.findMany();
+  async listSeoConfigs(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.sEOMetadata.findMany({ skip, take: limit }),
+      prisma.sEOMetadata.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createSeoConfig(data: any) {
@@ -167,8 +199,13 @@ export class CmsService {
   // ----------------------------------------------------
   // BANNERS SLIDES
   // ----------------------------------------------------
-  async listBanners() {
-    return prisma.banner.findMany({ orderBy: { order: "asc" } });
+  async listBanners(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.banner.findMany({ skip, take: limit, orderBy: { order: "asc" } }),
+      prisma.banner.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createBanner(data: any) {

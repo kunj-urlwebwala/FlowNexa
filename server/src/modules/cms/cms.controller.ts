@@ -6,8 +6,9 @@ export class CmsController {
   // Blog Categories
   async listBlogCategories(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const list = await cmsService.listBlogCategories();
-      successResponse(res, "Blog categories listed successfully", list);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listBlogCategories(page || 1, limit || 20);
+      successResponse(res, "Blog categories listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -26,8 +27,9 @@ export class CmsController {
   async listBlogPosts(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const publishedOnly = req.query.publishedOnly === "true";
-      const posts = await cmsService.listBlogPosts({ publishedOnly });
-      successResponse(res, "Blog articles listed successfully", posts);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listBlogPosts({ publishedOnly }, page || 1, limit || 20);
+      successResponse(res, "Blog articles listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -72,8 +74,9 @@ export class CmsController {
   // Testimonials
   async listTestimonials(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const list = await cmsService.listTestimonials();
-      successResponse(res, "Testimonials listed successfully", list);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listTestimonials(page || 1, limit || 20);
+      successResponse(res, "Testimonials listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -100,8 +103,9 @@ export class CmsController {
   // FAQs
   async listFaqs(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const faqs = await cmsService.listFaqs();
-      successResponse(res, "FAQs listed successfully", faqs);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listFaqs(page || 1, limit || 20);
+      successResponse(res, "FAQs listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -128,8 +132,9 @@ export class CmsController {
   // Dynamic Pages
   async listPages(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const pages = await cmsService.listPages();
-      successResponse(res, "Dynamic pages listed successfully", pages);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listPages(page || 1, limit || 20);
+      successResponse(res, "Dynamic pages listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -174,8 +179,9 @@ export class CmsController {
   // SEO
   async listSeo(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const configs = await cmsService.listSeoConfigs();
-      successResponse(res, "SEO configurations listed successfully", configs);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listSeoConfigs(page || 1, limit || 20);
+      successResponse(res, "SEO configurations listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -193,8 +199,9 @@ export class CmsController {
   // Banners
   async listBanners(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const banners = await cmsService.listBanners();
-      successResponse(res, "Slideshow banners listed successfully", banners);
+      const { page, limit } = req.query as any;
+      const result = await cmsService.listBanners(page || 1, limit || 20);
+      successResponse(res, "Slideshow banners listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

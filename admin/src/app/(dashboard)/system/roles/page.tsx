@@ -3,9 +3,7 @@
 import React, { useState } from "react";
 import DataTable, { Column } from "@/components/data-table/DataTable";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Eye, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Shield } from "lucide-react";
 
 interface PermissionRecord {
   id: string;
@@ -16,7 +14,7 @@ interface PermissionRecord {
 }
 
 export default function RolesPermissionsPage() {
-  const [permissions, setPermissions] = useState<PermissionRecord[]>([
+  const [permissions] = useState<PermissionRecord[]>([
     { id: "perm-1", moduleName: "Catalog & Products (CRUD)", superAdmin: true, warehouseManager: true, supportStaff: false },
     { id: "perm-2", moduleName: "Order Fulfillment (Dispatch)", superAdmin: true, warehouseManager: true, supportStaff: true },
     { id: "perm-3", moduleName: "Financial Accounts & Wallets", superAdmin: true, warehouseManager: false, supportStaff: false },

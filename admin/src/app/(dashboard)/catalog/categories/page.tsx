@@ -15,7 +15,7 @@ interface CategoryRecord {
   name: string;
   slug: string;
   description?: string;
-  subCategories?: any[];
+  subCategories?: Record<string, unknown>[];
 }
 
 export default function CategoriesPage() {
@@ -31,9 +31,9 @@ export default function CategoriesPage() {
       setLoading(true);
       const data = await api.get<CategoryRecord[]>("/categories");
       setCategories(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to load categories", {
-        description: err.message || "Could not connect to database server.",
+        description: err instanceof Error ? err.message : "Could not connect to database server.",
       });
     } finally {
       setLoading(false);
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
   };
 
   useEffect(() => {
-    fetchCategories();
+    fetchCategories(); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
   const handleCreateCategory = async (e: React.FormEvent) => {
@@ -66,9 +66,9 @@ export default function CategoriesPage() {
       setNewName("");
       setNewSlug("");
       setNewDescription("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to create category", {
-        description: err.message,
+        description: err instanceof Error ? err.message : String(err),
       });
     }
   };
@@ -78,9 +78,9 @@ export default function CategoriesPage() {
       await api.delete(`/categories/${row.id}`);
       setCategories(categories.filter((c) => c.id !== row.id));
       toast.success("Category deleted", { description: `${row.name} has been removed.` });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to delete category", {
-        description: err.message,
+        description: err instanceof Error ? err.message : String(err),
       });
     }
   };

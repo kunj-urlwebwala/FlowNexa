@@ -2,19 +2,54 @@ import { Request, Response, NextFunction } from "express";
 import { aiCallsService } from "./ai-calls.service";
 import { successResponse } from "../../shared/utils/response.util";
 import { logger } from "../../config/logger";
+import { env } from "../../config/env";
+import crypto from "crypto";
 
 export class AiCallsController {
   /**
-   * Handle Bland.ai webhook callback (no auth required)
+   * Verify Retell AI webhook signature
+   */
+  private verifyWebhookSignature(req: Request): boolean {
+    const secret = env.RETELL_WEBHOOK_SECRET;
+    if (!secret) {
+      // If no secret configured, skip verification (dev mode)
+      return true;
+    }
+
+    const signature = req.headers["x-retell-signature"] as string;
+    if (!signature) {
+      return false;
+    }
+
+    try {
+      const body = JSON.stringify(req.body);
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(body)
+        .digest("hex");
+      return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Handle Retell AI webhook callback (no auth required)
    */
   async handleWebhook(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      logger.info({ body: req.body }, "Bland.ai webhook received");
+      // Verify webhook signature for security
+      if (!this.verifyWebhookSignature(req)) {
+        logger.warn("Retell AI webhook signature verification failed");
+        res.status(401).json({ received: false, error: "Invalid signature" });
+        return;
+      }
+
+      logger.info({ body: req.body }, "Retell AI webhook received");
       await aiCallsService.handleCallWebhook(req.body);
-      // Bland.ai expects a 200 response
       res.status(200).json({ received: true });
     } catch (error) {
-      logger.error({ error }, "Error processing Bland.ai webhook");
+      logger.error({ error }, "Error processing Retell AI webhook");
       // Still return 200 to prevent webhook retries
       res.status(200).json({ received: true, error: "Processing failed" });
     }
@@ -65,8 +100,8 @@ export class AiCallsController {
    */
   async retryCall(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await aiCallsService.retryCallManually(req.params.orderId as string);
-      successResponse(res, "Verification call scheduled successfully", null, 201);
+      const result = await aiCallsService.retryCallManually(req.params.orderId as string);
+      successResponse(res, `Verification call initiated to ${result.phone} (attempt #${result.attempt})`, result, 201);
     } catch (error) {
       next(error);
     }

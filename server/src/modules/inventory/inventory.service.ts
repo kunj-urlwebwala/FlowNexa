@@ -6,15 +6,18 @@ export class InventoryService {
   // WAREHOUSES CRUD
   // ----------------------------------------------------
 
-  async listWarehouses() {
-    return prisma.warehouse.findMany({
-      include: {
-        _count: {
-          select: { stocks: true },
-        },
-      },
-      orderBy: { name: "asc" },
-    });
+  async listWarehouses(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.warehouse.findMany({
+        skip,
+        take: limit,
+        include: { _count: { select: { stocks: true } } },
+        orderBy: { name: "asc" },
+      }),
+      prisma.warehouse.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async getWarehouseById(id: string) {
@@ -184,24 +187,31 @@ export class InventoryService {
     return updatedStock;
   }
 
-  async listStockLedger() {
-    return prisma.stockLedger.findMany({
-      include: {
-        warehouse: { select: { name: true, code: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+  async listStockLedger(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.stockLedger.findMany({
+        skip,
+        take: limit,
+        include: { warehouse: { select: { name: true, code: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.stockLedger.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   // ----------------------------------------------------
   // STOCK AUDITS
   // ----------------------------------------------------
 
-  async listAudits() {
-    return prisma.stockAudit.findMany({
-      orderBy: { auditDate: "desc" },
-    });
+  async listAudits(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.stockAudit.findMany({ skip, take: limit, orderBy: { auditDate: "desc" } }),
+      prisma.stockAudit.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createAudit(data: any) {
@@ -230,10 +240,13 @@ export class InventoryService {
   // RESTOCK REQUESTS
   // ----------------------------------------------------
 
-  async listRestockRequests() {
-    return prisma.restockRequest.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async listRestockRequests(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.restockRequest.findMany({ skip, take: limit, orderBy: { createdAt: "desc" } }),
+      prisma.restockRequest.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createRestockRequest(data: any) {
@@ -262,10 +275,13 @@ export class InventoryService {
   // DAMAGED STOCK
   // ----------------------------------------------------
 
-  async listDamagedStock() {
-    return prisma.damagedStock.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async listDamagedStock(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.damagedStock.findMany({ skip, take: limit, orderBy: { createdAt: "desc" } }),
+      prisma.damagedStock.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createDamagedStock(data: any) {

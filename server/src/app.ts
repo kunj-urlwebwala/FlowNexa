@@ -25,6 +25,9 @@ import cmsRoutes from "./modules/cms/cms.routes";
 import marketingRoutes from "./modules/marketing/marketing.routes";
 import paymentsRoutes from "./modules/payments/payments.routes";
 import aiCallsRoutes from "./modules/ai-calls/ai-calls.routes";
+import cartRoutes from "./modules/cart/cart.routes";
+import wishlistRoutes from "./modules/wishlist/wishlist.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import { setupSwagger } from "./config/swagger";
 
 const app: Express = express();
@@ -89,6 +92,9 @@ app.use("/api/v1/cms", cmsRoutes);
 app.use("/api/v1/marketing", marketingRoutes);
 app.use("/api/v1/payments", paymentsRoutes);
 app.use("/api/v1/ai-calls", aiCallsRoutes);
+app.use("/api/v1/cart", cartRoutes);
+app.use("/api/v1/wishlist", wishlistRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 
 // Setup Swagger Docs
 setupSwagger(app);

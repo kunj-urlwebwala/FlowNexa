@@ -3,6 +3,7 @@ import { ConflictError, NotFoundError } from "../../shared/errors/AppError";
 import { OrderStatus, PaymentStatus, ReturnStatus, StockTransactionType } from "@prisma/client";
 import { addInvoiceEmailJob, addVerificationCallJob } from "../../jobs/queue";
 import { logger } from "../../config/logger";
+import { sendMail } from "../../shared/utils/email.util";
 
 export class OrdersService {
   /**
@@ -17,6 +18,16 @@ export class OrdersService {
     });
     if (!user) {
       throw new NotFoundError("Customer profile not found");
+    }
+
+    // Auto-save/update phone to profile from checkout shipping address
+    const shippingPhone = (data.shippingAddress as any)?.phone;
+    if (shippingPhone && shippingPhone !== user.phone) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { phone: shippingPhone },
+      });
+      logger.info({ userId, oldPhone: user.phone, newPhone: shippingPhone }, "Phone number updated on user profile from checkout");
     }
 
     // Run order placement in a single Transaction to guarantee atomicity and stock security
@@ -97,6 +108,15 @@ export class OrdersService {
 
     // Schedule AI verification pipeline (fire-and-forget, don't block order response)
     try {
+      // 0. Create initial verification call record so it appears in admin dashboard immediately
+      await prisma.verificationCall.create({
+        data: {
+          orderId: order.id,
+          status: "SCHEDULED",
+          attemptNumber: 1,
+        },
+      });
+
       // 1. Send invoice email immediately
       await addInvoiceEmailJob(order.id);
 
@@ -166,9 +186,39 @@ export class OrdersService {
   }
 
   /**
-   * Get order by ID
+   * Get orders for the logged-in customer
    */
-  async getOrderById(id: string) {
+  async getMyOrders(userId: string, page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where: { userId },
+        skip,
+        take: limit,
+        include: {
+          items: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.order.count({ where: { userId } }),
+    ]);
+
+    return {
+      orders,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get order by ID (with optional ownership check for customers)
+   */
+  async getOrderById(id: string, requestUserId?: string) {
     const order = await prisma.order.findUnique({
       where: { id },
       include: {
@@ -182,6 +232,11 @@ export class OrdersService {
     });
 
     if (!order) {
+      throw new NotFoundError("Order details not found");
+    }
+
+    // If requestUserId is provided (customer request), verify ownership
+    if (requestUserId && order.userId !== requestUserId) {
       throw new NotFoundError("Order details not found");
     }
 
@@ -250,6 +305,44 @@ export class OrdersService {
       });
     });
 
+    // Send status update email (fire-and-forget)
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: order.userId },
+        select: { email: true, name: true },
+      });
+
+      if (user?.email) {
+        const statusLabels: Record<string, string> = {
+          PROCESSING: "is being processed",
+          SHIPPED: "has been shipped",
+          DELIVERED: "has been delivered",
+          CANCELLED: "has been cancelled",
+        };
+
+        const statusLabel = statusLabels[status] || `status updated to ${status}`;
+
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #84cc16;">Order ${statusLabel}</h2>
+            <p>Hi ${user.name},</p>
+            <p>Your order <strong>${order.orderNumber}</strong> ${statusLabel}.</p>
+            <p><strong>Order Total: ₹${order.total.toFixed(2)}</strong></p>
+            ${status === "SHIPPED" ? `<p>Your order is on its way! You will receive tracking details soon.</p>` : ""}
+            ${status === "DELIVERED" ? `<p>We hope you enjoy your purchase! Thank you for shopping with FlowNexa.</p>` : ""}
+            ${status === "CANCELLED" ? `<p>If you have any questions, please contact our support team.</p>` : ""}
+            <br/>
+            <p>Best regards,<br/>FlowNexa Team</p>
+          </div>
+        `;
+
+        await sendMail(user.email, `Order ${order.orderNumber} ${statusLabel}`, html);
+      }
+    } catch (emailError) {
+      // Non-critical - don't fail the status update
+      logger.error({ error: emailError, orderId: order.id }, "Failed to send order status email");
+    }
+
     return updated;
   }
 
@@ -257,12 +350,45 @@ export class OrdersService {
   // RETURNS, REFUNDS & CANCEL REASONS
   // ----------------------------------------------------
 
-  async createReturnRequest(data: any) {
+  async listReturns(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [returns, total] = await Promise.all([
+      prisma.return.findMany({
+        skip,
+        take: limit,
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+              user: { select: { name: true, email: true } },
+              items: { select: { product: { select: { name: true } }, quantity: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.return.count(),
+    ]);
+
+    return {
+      returns,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async createReturnRequest(data: any, requestUserId?: string) {
     const order = await prisma.order.findUnique({
       where: { id: data.orderId },
     });
 
     if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    // If requestUserId is provided (customer request), verify ownership
+    if (requestUserId && order.userId !== requestUserId) {
       throw new NotFoundError("Order not found");
     }
 
@@ -298,27 +424,73 @@ export class OrdersService {
   async createRefund(data: any) {
     const order = await prisma.order.findUnique({
       where: { id: data.orderId },
+      include: { items: true },
     });
 
     if (!order) {
       throw new NotFoundError("Order not found");
     }
 
-    const refund = await prisma.refund.create({
-      data: {
-        orderId: data.orderId,
-        amount: data.amount,
-        transactionId: data.transactionId,
-        reason: data.reason,
-        status: PaymentStatus.PAID,
-      },
+    const refund = await prisma.$transaction(async (tx) => {
+      // Create refund record with PENDING status (not PAID immediately)
+      const refundRecord = await tx.refund.create({
+        data: {
+          orderId: data.orderId,
+          amount: data.amount,
+          transactionId: data.transactionId,
+          reason: data.reason,
+          status: PaymentStatus.PENDING,
+        },
+      });
+
+      // Restore inventory stock for refunded items
+      for (const item of order.items) {
+        const defaultWarehouse = await tx.warehouse.findFirst();
+        if (defaultWarehouse) {
+          const stock = await tx.inventoryStock.findFirst({
+            where: {
+              warehouseId: defaultWarehouse.id,
+              productId: item.productId,
+              variantId: item.variantId || null,
+            },
+          });
+
+          if (stock) {
+            await tx.inventoryStock.update({
+              where: { id: stock.id },
+              data: { quantity: { increment: item.quantity } },
+            });
+
+            // Log stock adjustment ledger
+            await tx.stockLedger.create({
+              data: {
+                warehouseId: defaultWarehouse.id,
+                productId: item.productId,
+                variantId: item.variantId || null,
+                type: StockTransactionType.RETURN,
+                quantity: item.quantity,
+                note: `Refund stock recovery: ${order.orderNumber}`,
+              },
+            });
+          }
+        }
+      }
+
+      // Update order payment status
+      await tx.order.update({
+        where: { id: data.orderId },
+        data: { paymentStatus: PaymentStatus.REFUNDED },
+      });
+
+      return refundRecord;
     });
 
-    // Update order payment status
-    await prisma.order.update({
-      where: { id: data.orderId },
-      data: { paymentStatus: PaymentStatus.REFUNDED },
-    });
+    // Send refund confirmation email (fire-and-forget)
+    try {
+      await addInvoiceEmailJob(order.id);
+    } catch {
+      // Non-critical
+    }
 
     return refund;
   }

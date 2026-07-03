@@ -22,6 +22,7 @@ router.use(authMiddleware);
 
 // Storefront customer endpoints
 router.post("/", validateRequest(createOrderSchema), ordersController.create);
+router.get("/my-orders", ordersController.getMyOrders);
 router.post("/returns", validateRequest(createReturnSchema), ordersController.createReturn);
 router.get("/cancel-reasons", ordersController.listCancelReasons);
 
@@ -41,6 +42,13 @@ router.patch("/:id/status", rbacMiddleware([
   AdminRole.ORDER_MANAGER,
   AdminRole.SUPPORT_STAFF,
 ]), validateRequest(updateOrderStatusSchema), ordersController.updateStatus);
+
+router.get("/returns", rbacMiddleware([
+  AdminRole.SUPER_ADMIN,
+  AdminRole.MANAGEMENT_TEAM,
+  AdminRole.ORDER_MANAGER,
+  AdminRole.SUPPORT_STAFF,
+]), ordersController.listReturns);
 
 router.patch("/returns/:id", rbacMiddleware([
   AdminRole.SUPER_ADMIN,

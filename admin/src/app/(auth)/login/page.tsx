@@ -38,9 +38,6 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
     const success = await login(data.email, data.password);
     
     if (success) {

@@ -18,7 +18,7 @@ interface TransactionRecord {
 
 export default function WalletPage() {
   const [balance, setBalance] = useState(48291.5);
-  const [txs, setTxs] = useState<TransactionRecord[]>([
+  const [txs] = useState<TransactionRecord[]>([
     { id: "TXN-7412", type: "Order Secure Capture (#FN-847291)", amount: 299.0, channel: "Stripe", date: "2 mins ago", status: "Delivered" },
     { id: "TXN-7411", type: "Bank Account Settlement Payout", amount: -15000.0, channel: "Silicon Valley Bank", date: "Yesterday", status: "Delivered" },
     { id: "TXN-7410", type: "Refund Reversal Deduction (#FN-102948)", amount: -189.0, channel: "Stripe", date: "June 28, 2026", status: "Delivered" },

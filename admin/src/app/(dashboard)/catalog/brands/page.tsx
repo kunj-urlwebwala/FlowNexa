@@ -30,9 +30,9 @@ export default function BrandsPage() {
       setLoading(true);
       const data = await api.get<BrandRecord[]>("/brands");
       setBrands(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to load brands", {
-        description: err.message || "Could not connect to database server.",
+        description: err instanceof Error ? err.message : "Could not connect to database server.",
       });
     } finally {
       setLoading(false);
@@ -40,7 +40,7 @@ export default function BrandsPage() {
   };
 
   useEffect(() => {
-    fetchBrands();
+    fetchBrands(); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
   const handleCreateBrand = async (e: React.FormEvent) => {
@@ -65,9 +65,9 @@ export default function BrandsPage() {
       setNewName("");
       setNewWebsite("");
       setNewDescription("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to create brand", {
-        description: err.message,
+        description: err instanceof Error ? err.message : String(err),
       });
     }
   };
@@ -77,9 +77,9 @@ export default function BrandsPage() {
       await api.delete(`/brands/${row.id}`);
       setBrands(brands.filter((b) => b.id !== row.id));
       toast.success("Brand deleted", { description: `${row.name} has been removed.` });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to delete brand", {
-        description: err.message,
+        description: err instanceof Error ? err.message : String(err),
       });
     }
   };

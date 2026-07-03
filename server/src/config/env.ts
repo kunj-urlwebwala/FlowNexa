@@ -24,8 +24,8 @@ const envSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
 
   // JWT
-  JWT_ACCESS_SECRET: z.string(),
-  JWT_REFRESH_SECRET: z.string(),
+  JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
+  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
   JWT_ACCESS_EXPIRY: z.string().default("15m"),
   JWT_REFRESH_EXPIRY: z.string().default("7d"),
 
@@ -53,11 +53,13 @@ const envSchema = z.object({
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().default("sk_test_placeholder"),
+  STRIPE_WEBHOOK_SECRET: z.string().default(""),
 
   // AI Calling Agent (Retell.ai)
   RETELL_API_KEY: z.string().default(""),
   RETELL_AGENT_ID: z.string().default(""),
   RETELL_FROM_NUMBER: z.string().default(""),
+  RETELL_WEBHOOK_SECRET: z.string().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);

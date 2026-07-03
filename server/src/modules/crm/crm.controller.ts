@@ -6,8 +6,10 @@ export class CrmController {
   // Leads
   async listLeads(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const leads = await crmService.listLeads();
-      successResponse(res, "Leads listed successfully", leads);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await crmService.listLeads(page, limit);
+      successResponse(res, "Leads listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -52,8 +54,10 @@ export class CrmController {
   // Areas
   async listAreas(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const areas = await crmService.listAreas();
-      successResponse(res, "Territory areas listed successfully", areas);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await crmService.listAreas(page, limit);
+      successResponse(res, "Territory areas listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }
@@ -80,8 +84,10 @@ export class CrmController {
   // Contact requests
   async listContact(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const list = await crmService.listContactRequests();
-      successResponse(res, "Contact support requests listed successfully", list);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await crmService.listContactRequests(page, limit);
+      successResponse(res, "Contact support requests listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

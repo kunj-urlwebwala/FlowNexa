@@ -32,27 +32,31 @@ export default function OrdersListPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const data = await api.get<any[]>("/orders");
+      const data = await api.get<Record<string, unknown>[]>("/orders");
       
-      const mapped: OrderRecord[] = data.map((o) => ({
-        id: o.id,
-        orderNumber: o.orderNumber,
-        customerName: o.user?.name || "Guest Customer",
-        customerEmail: o.user?.email || "guest@flownexa.com",
-        itemsSummary: (o.items || []).map((i: any) => `${i.productName} (x${i.quantity})`).join(", "),
-        total: o.total,
-        paymentMethod: o.paymentMethod,
-        createdDate: new Date(o.createdAt).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
-        status: o.status,
-      }));
+      const mapped: OrderRecord[] = data.map((o) => {
+        const user = o.user as Record<string, unknown> | undefined;
+        const items = (o.items as Array<Record<string, unknown>>) || [];
+        return {
+          id: o.id as string,
+          orderNumber: o.orderNumber as string,
+          customerName: (user?.name as string) || "Guest Customer",
+          customerEmail: (user?.email as string) || "guest@flownexa.com",
+          itemsSummary: items.map((i) => `${i.productName as string} (x${i.quantity as string})`).join(", "),
+          total: o.total as number,
+          paymentMethod: o.paymentMethod as string,
+          createdDate: new Date(o.createdAt as string).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+          status: o.status as string,
+        };
+      });
 
       setOrdersList(mapped);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load orders list");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -84,8 +88,8 @@ export default function OrdersListPage() {
       await api.patch(`/orders/${id}/status`, { status });
       toast.success(`Order status updated to ${status}`);
       fetchOrders(); // reload
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update status");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -179,8 +183,8 @@ export default function OrdersListPage() {
           }
           toast.success("Selected orders marked as SHIPPED");
           fetchOrders();
-        } catch (err: any) {
-          toast.error("Failed to ship some orders", { description: err.message });
+        } catch (err: unknown) {
+          toast.error("Failed to ship some orders", { description: err instanceof Error ? err.message : String(err) });
         }
       },
       icon: Truck,
@@ -195,8 +199,8 @@ export default function OrdersListPage() {
           }
           toast.success("Selected orders CANCELLED");
           fetchOrders();
-        } catch (err: any) {
-          toast.error("Failed to cancel some orders", { description: err.message });
+        } catch (err: unknown) {
+          toast.error("Failed to cancel some orders", { description: err instanceof Error ? err.message : String(err) });
         }
       },
       icon: XCircle,
@@ -231,7 +235,7 @@ export default function OrdersListPage() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`py-3 px-4 text-xs font-bold transition-all relative cursor-pointer whitespace-nowrap ${
               activeTab === tab.id
                 ? "text-flownexa-lime"

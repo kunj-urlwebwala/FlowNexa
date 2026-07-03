@@ -26,7 +26,7 @@ export default function SearchDialog() {
   // Search logic
   useEffect(() => {
     if (!query) {
-      setResults([]);
+      setResults([]); // eslint-disable-line react-hooks/set-state-in-effect
       return;
     }
 
@@ -100,7 +100,7 @@ export default function SearchDialog() {
                     </div>
                   </div>
                   <span className="text-flownexa-lime font-semibold text-xs">
-                    ${product.price}
+                    ₹{product.price}
                   </span>
                 </CommandItem>
               ))}

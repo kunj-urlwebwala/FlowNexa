@@ -32,23 +32,19 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const success = await login(data.email, data.password);
-    if (success) {
+    const result = await login(data.email, data.password);
+    if (result.success) {
       toast.success("Successfully logged in! Welcome back to FlowNexa.");
       const searchParams = new URLSearchParams(window.location.search);
       const redirectPath = searchParams.get("redirect") || "/";
       router.push(redirectPath);
     } else {
-      toast.error("Invalid email or password. Please try again.");
+      toast.error(result.error || "Invalid email or password. Please try again.");
     }
   };
 
   const handleSocialLogin = (provider: string) => {
-    login("social.user@flownexa.com", "Alex Mercer");
-    toast.success(`Successfully logged in via ${provider}!`);
-    router.push("/");
+    toast.info(`${provider} login coming soon! Please use email/password for now.`);
   };
 
   return (

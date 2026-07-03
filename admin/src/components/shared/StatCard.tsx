@@ -1,13 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: any;
+  icon: ComponentType<{ size?: number; className?: string }>;
   trend?: {
     value: number;
     isUp: boolean;

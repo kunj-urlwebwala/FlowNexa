@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ShieldAlert } from "lucide-react";
+
 
 export default function SecurityPage() {
   const [tfa, setTfa] = useState(true);

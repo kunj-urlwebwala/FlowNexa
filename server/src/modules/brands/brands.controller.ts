@@ -5,8 +5,10 @@ import { successResponse } from "../../shared/utils/response.util";
 export class BrandsController {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const brands = await brandsService.listBrands();
-      successResponse(res, "Brands listed successfully", brands);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await brandsService.listBrands(page, limit);
+      successResponse(res, "Brands listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

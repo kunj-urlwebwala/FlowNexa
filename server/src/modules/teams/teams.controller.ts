@@ -8,8 +8,10 @@ export class TeamsController {
    */
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const members = await teamsService.listTeamMembers();
-      successResponse(res, "Admin team members listed successfully", members);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await teamsService.listTeamMembers(page, limit);
+      successResponse(res, "Admin team members listed successfully", result.items, 200, result.meta);
     } catch (error) {
       next(error);
     }

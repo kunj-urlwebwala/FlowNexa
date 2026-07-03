@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import DataTable, { Column } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
-import { Edit3, Eye, Plus } from "lucide-react";
+import { Edit3, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

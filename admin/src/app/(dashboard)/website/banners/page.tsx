@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import DataTable, { Column } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import MediaUploader from "@/components/shared/MediaUploader";
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -58,7 +58,7 @@ export default function LeadsPipelinePage() {
     router.push(`/crm/leads/${card.id}`);
   };
 
-  const handleAddCard = (colId: string) => {
+  const handleAddCard = () => {
     setDialogOpen(true);
   };
 
@@ -70,7 +70,7 @@ export default function LeadsPipelinePage() {
           <p className="text-xs text-muted-foreground">Manage enterprise B2B sales pipelines and drag-and-drop cards to update status.</p>
         </div>
         <Button
-          onClick={() => handleAddCard("new")}
+          onClick={() => handleAddCard()}
           className="rounded-full bg-flownexa-lime hover:bg-flownexa-lime-hover text-flownexa-black font-semibold text-xs h-10 px-5 gap-1.5 shadow-lg shadow-flownexa-lime/10 cursor-pointer"
         >
           <Plus size={16} />

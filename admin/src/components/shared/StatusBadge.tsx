@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CheckCircle2, AlertCircle, Clock, Truck, ShieldAlert, XCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Truck, XCircle } from "lucide-react";
 
 interface StatusBadgeProps {
   status: string;

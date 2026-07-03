@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Heart, ShoppingCart, User, Menu, LogOut, Settings, History } from "lucide-react";
+import { Search, Heart, ShoppingCart, User, Menu, LogOut, History } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";

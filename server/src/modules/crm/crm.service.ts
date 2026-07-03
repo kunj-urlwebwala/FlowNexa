@@ -6,10 +6,13 @@ export class CrmService {
   // LEADS PIPELINE
   // ----------------------------------------------------
 
-  async listLeads() {
-    return prisma.lead.findMany({
-      orderBy: { updatedAt: "desc" },
-    });
+  async listLeads(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.lead.findMany({ skip, take: limit, orderBy: { updatedAt: "desc" } }),
+      prisma.lead.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async getLeadById(id: string) {
@@ -53,10 +56,13 @@ export class CrmService {
   // GEOGRAPHIC AREAS
   // ----------------------------------------------------
 
-  async listAreas() {
-    return prisma.area.findMany({
-      orderBy: { regionName: "asc" },
-    });
+  async listAreas(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.area.findMany({ skip, take: limit, orderBy: { regionName: "asc" } }),
+      prisma.area.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createArea(data: any) {
@@ -83,10 +89,13 @@ export class CrmService {
   // CONTACT REQUESTS
   // ----------------------------------------------------
 
-  async listContactRequests() {
-    return prisma.contactRequest.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  async listContactRequests(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.contactRequest.findMany({ skip, take: limit, orderBy: { createdAt: "desc" } }),
+      prisma.contactRequest.count(),
+    ]);
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async createContactRequest(data: any) {

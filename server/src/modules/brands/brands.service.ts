@@ -3,16 +3,24 @@ import { generateSlug } from "../../shared/utils/slug.util";
 import { ConflictError, NotFoundError } from "../../shared/errors/AppError";
 
 export class BrandsService {
-  async listBrands() {
-    const brands = await prisma.brand.findMany({
-      include: {
-        _count: {
-          select: { products: true },
+  async listBrands(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      prisma.brand.findMany({
+        skip,
+        take: limit,
+        include: {
+          _count: {
+            select: { products: true },
+          },
         },
-      },
-      orderBy: { name: "asc" },
-    });
-    return brands;
+        orderBy: { name: "asc" },
+      }),
+      prisma.brand.count(),
+    ]);
+
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async getBrandById(id: string) {

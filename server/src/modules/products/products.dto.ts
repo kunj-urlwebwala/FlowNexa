@@ -48,7 +48,7 @@ export const listProductsSchema = z.object({
     brand: z.string().optional(), // brand slug or ID
     minPrice: z.string().optional().transform((val) => (val ? parseFloat(val) : undefined)),
     maxPrice: z.string().optional().transform((val) => (val ? parseFloat(val) : undefined)),
-    sortBy: z.enum(["price_asc", "price_desc", "newest"]).default("newest"),
+    sortBy: z.enum(["price_asc", "price_desc", "newest", "createdAt_desc", "createdAt_asc"]).default("newest"),
   }),
 });
 

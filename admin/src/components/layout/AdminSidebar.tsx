@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,7 +29,7 @@ import {
 
 interface SidebarItem {
   label: string;
-  icon: any;
+  icon: ComponentType<{ size?: number; className?: string }>;
   href?: string;
   subItems?: { label: string; href: string }[];
 }

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, User, ShieldCheck } from "lucide-react";
+import { Save, ShieldCheck } from "lucide-react";
 import { useAdminStore } from "@/store/adminStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 

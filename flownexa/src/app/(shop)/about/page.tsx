@@ -2,7 +2,7 @@
 
 import SectionHeader from "@/components/shared/SectionHeader";
 import PageTransition from "@/components/shared/PageTransition";
-import { Sparkles, Trophy, Earth, Award } from "lucide-react";
+import { Trophy, Earth, Award } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function AboutPage() {

@@ -6,24 +6,32 @@ export class TeamsService {
   /**
    * List admin team members
    */
-  async listTeamMembers() {
-    const members = await prisma.adminUser.findMany({
-      where: { deletedAt: null },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        role: true,
-        status: true,
-        avatar: true,
-        lastActive: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  async listTeamMembers(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = { deletedAt: null };
 
-    return members;
+    const [items, total] = await Promise.all([
+      prisma.adminUser.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          role: true,
+          status: true,
+          avatar: true,
+          lastActive: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.adminUser.count({ where }),
+    ]);
+
+    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   /**

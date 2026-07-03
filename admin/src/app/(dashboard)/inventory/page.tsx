@@ -3,9 +3,9 @@
 import React from "react";
 import StatCard from "@/components/shared/StatCard";
 import ChartCard from "@/components/shared/ChartCard";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { mockWarehouseDistribution } from "@/data/dashboard";
-import { Warehouse, AlertTriangle, RefreshCw, AlertCircle, TrendingUp, History } from "lucide-react";
+import { Warehouse, AlertTriangle, RefreshCw, AlertCircle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatusBadge from "@/components/shared/StatusBadge";
 import Link from "next/link";
