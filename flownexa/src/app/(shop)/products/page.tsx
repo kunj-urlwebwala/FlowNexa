@@ -167,11 +167,28 @@ function ProductsContent() {
       if (priceRange[1] < 50000) params.set("maxPrice", priceRange[1].toString());
       if (sortBy) params.set("sortBy", sortBy);
 
-      const result = await api.get<Product[]>(`/products?${params.toString()}`);
+      const result = await api.get<Record<string, unknown>[]>(`/products?${params.toString()}`);
+      const mapped: Product[] = (result || []).map((item: Record<string, unknown>) => ({
+        id: item.id as string,
+        name: item.name as string,
+        slug: item.slug as string,
+        price: item.price as number,
+        originalPrice: item.compareAtPrice as number | undefined,
+        images: item.images as string[],
+        category: (item.category as Record<string, string>)?.slug || "",
+        rating: 0,
+        reviewCount: 0,
+        colors: [],
+        inStock: (item.inStock as boolean) ?? true,
+        featured: false,
+        trending: false,
+        description: item.description as string,
+        specifications: {},
+      }));
       if (reset) {
-        setProducts(result || []);
+        setProducts(mapped);
       } else {
-        setProducts((prev) => [...prev, ...(result || [])]);
+        setProducts((prev) => [...prev, ...mapped]);
       }
     } catch {
       toast.error("Failed to load products. Please try again.");

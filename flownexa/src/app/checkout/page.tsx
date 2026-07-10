@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { ShieldCheck, ArrowLeft, ArrowRight, CreditCard, CheckCircle2, Ticket, MapPin } from "lucide-react";
+import { ShieldCheck, ArrowLeft, ArrowRight, CreditCard, CheckCircle2, Ticket, MapPin, Loader2 } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import Logo from "@/components/shared/Logo";
@@ -35,14 +35,32 @@ type FormData = z.infer<typeof checkoutSchema>;
 
 const MAX_ADDRESSES = 5;
 
-export default function CheckoutPage() {
+export default function CheckoutPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="bg-flownexa-black text-white min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-flownexa-lime size-8" />
+      </div>
+    }>
+      <CheckoutPage />
+    </Suspense>
+  );
+}
+
+function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { cart, clearCart } = useCartStore();
   const { user, isAuthenticated, addAddress } = useAuthStore();
   const [fallbackOrderNumber] = useState(() => `FN-${Date.now()}`);
 
   const savedAddresses = user?.addresses || [];
   const defaultAddress = savedAddresses.find((addr) => addr.isDefault) || savedAddresses[0];
+
+  // Check for Stripe return params
+  const sessionId = searchParams.get("session_id");
+  const orderId = searchParams.get("order_id");
+  const canceled = searchParams.get("canceled");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -51,7 +69,31 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, router]);
 
-  const [step, setStep] = useState<"shipping" | "payment" | "success">("shipping");
+  useEffect(() => {
+    if (sessionId && orderId) {
+      // Successful payment return from Stripe - fetch order details
+      api.get<{ id: string; orderNumber: string; total: number }>(`/orders/${orderId}`)
+        .then((orderData) => {
+          setOrderResult(orderData);
+        })
+        .catch(() => {
+          setOrderResult({ id: orderId, orderNumber: fallbackOrderNumber, total: 0 });
+        });
+      setStep("success");
+      clearCart();
+    }
+  }, [sessionId, orderId, fallbackOrderNumber, clearCart]);
+
+  useEffect(() => {
+    if (canceled === "true" && orderId) {
+      toast.error("Payment was cancelled. You can try again.");
+      setStep("payment");
+    }
+  }, [canceled, orderId]);
+
+  const [step, setStep] = useState<"shipping" | "payment" | "success">(
+    sessionId && orderId ? "success" : "shipping"
+  );
   const [paymentMethod, setPaymentMethod] = useState<"card" | "cod">("card");
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | "new">(defaultAddress?.id || "new");
@@ -170,11 +212,19 @@ export default function CheckoutPage() {
         });
       }
 
-      // Store order details for success page
-      setOrderResult(orderResponse);
-      toast.success("Order Placed Successfully! Thank you for choosing FlowNexa.");
-      setStep("success");
-      clearCart();
+      if (paymentMethod === "card") {
+        // Redirect to Stripe Checkout for card payments
+        const session = await api.post<{ url: string }>("/payments/create-checkout-session", {
+          orderId: orderResponse.id,
+        });
+        window.location.href = session.url;
+      } else {
+        // COD: show success immediately
+        setOrderResult(orderResponse);
+        toast.success("Order Placed Successfully! Thank you for choosing FlowNexa.");
+        setStep("success");
+        clearCart();
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to place order";
       toast.error(message);

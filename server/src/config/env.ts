@@ -60,6 +60,22 @@ const envSchema = z.object({
   RETELL_AGENT_ID: z.string().default(""),
   RETELL_FROM_NUMBER: z.string().default(""),
   RETELL_WEBHOOK_SECRET: z.string().default(""),
+
+  // OpenAI
+  OPENAI_API_KEY: z.string().default(""),
+
+  // Exotel
+  EXOTEL_ACCOUNT_SID: z.string().default(""),
+  EXOTEL_API_KEY: z.string().default(""),
+  EXOTEL_API_TOKEN: z.string().default(""),
+  EXOTEL_VIRTUAL_NUMBER: z.string().default(""),
+  EXOTEL_API_DOMAIN: z.string().default("api.in.exotel.com"),
+  EXOTEL_FLOW_URL: z.string().default(""),
+  EXOTEL_AUDIO_FORMAT: z.enum(["pcm16", "g711_ulaw", "g711_alaw"]).default("pcm16"),
+
+  // Bot Server
+  BOT_PORT: z.coerce.number().default(9090),
+  BOT_PUBLIC_URL: z.string().default("wss://localhost:9090"),
 });
 
 const parsed = envSchema.safeParse(process.env);

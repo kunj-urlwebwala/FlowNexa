@@ -54,6 +54,6 @@ export const listProductsSchema = z.object({
 
 export const getProductByIdSchema = z.object({
   params: z.object({
-    id: z.string().uuid("Invalid product ID"),
+    id: z.string().min(1, "Product ID or slug is required"),
   }),
 });

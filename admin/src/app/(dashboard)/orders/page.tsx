@@ -25,14 +25,32 @@ interface OrderRecord {
 export default function OrdersListPage() {
   const [ordersList, setOrdersList] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "shipped" | "delivered" | "cancelled">("all");
 
   const fetchedRef = useRef(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (pageNum = 1) => {
     try {
       setLoading(true);
-      const data = await api.get<Record<string, unknown>[]>("/orders");
+      const storeData = localStorage.getItem("flownexa-admin-store");
+      let token = "";
+      if (storeData) {
+        try { token = JSON.parse(storeData)?.state?.token || ""; } catch {}
+      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1"}/orders?page=${pageNum}&limit=50`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+      const json = await response.json();
+      const data: Record<string, unknown>[] = json.data || [];
+      const meta = json.meta || { totalPages: 1 };
       
       const mapped: OrderRecord[] = data.map((o) => {
         const user = o.user as Record<string, unknown> | undefined;
@@ -55,6 +73,7 @@ export default function OrdersListPage() {
       });
 
       setOrdersList(mapped);
+      setTotalPages(meta.totalPages || 1);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
     } finally {
@@ -65,7 +84,7 @@ export default function OrdersListPage() {
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
-    fetchOrders();
+    fetchOrders(1);
   }, []);
 
   const filteredOrders = useMemo(() => {
@@ -87,7 +106,7 @@ export default function OrdersListPage() {
     try {
       await api.patch(`/orders/${id}/status`, { status });
       toast.success(`Order status updated to ${status}`);
-      fetchOrders(); // reload
+      fetchOrders(page); // reload on same page
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
     }
@@ -182,7 +201,7 @@ export default function OrdersListPage() {
             await api.patch(`/orders/${item.id}/status`, { status: "SHIPPED" });
           }
           toast.success("Selected orders marked as SHIPPED");
-          fetchOrders();
+          fetchOrders(page);
         } catch (err: unknown) {
           toast.error("Failed to ship some orders", { description: err instanceof Error ? err.message : String(err) });
         }
@@ -198,7 +217,7 @@ export default function OrdersListPage() {
             await api.patch(`/orders/${item.id}/status`, { status: "CANCELLED" });
           }
           toast.success("Selected orders CANCELLED");
-          fetchOrders();
+          fetchOrders(page);
         } catch (err: unknown) {
           toast.error("Failed to cancel some orders", { description: err instanceof Error ? err.message : String(err) });
         }
@@ -267,13 +286,50 @@ export default function OrdersListPage() {
             <span className="text-xs text-muted-foreground">Syncing orders ledger with database...</span>
           </div>
         ) : (
-          <DataTable
-            data={filteredOrders}
-            columns={columns}
-            searchKey="customerName"
-            searchPlaceholder="Search orders by customer name..."
-            bulkActions={bulkActions}
-          />
+          <>
+            <DataTable
+              data={filteredOrders}
+              columns={columns}
+              searchKey="customerName"
+              searchPlaceholder="Search orders by customer name..."
+              bulkActions={bulkActions}
+            />
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
+                <span className="text-xs text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => {
+                      const next = page - 1;
+                      setPage(next);
+                      fetchOrders(next);
+                    }}
+                    className="text-xs"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => {
+                      const next = page + 1;
+                      setPage(next);
+                      fetchOrders(next);
+                    }}
+                    className="text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

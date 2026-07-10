@@ -38,8 +38,24 @@ export default function ProductDetailPage({ params }: ProductPageProps) {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const data = await api.get<Product>(`/products/${slug}`);
-        setProduct(data);
+        const data = await api.get<Record<string, unknown>>(`/products/${slug}`);
+        setProduct({
+          id: data.id as string,
+          name: data.name as string,
+          slug: data.slug as string,
+          price: data.price as number,
+          originalPrice: data.compareAtPrice as number | undefined,
+          images: data.images as string[],
+          category: (data.category as Record<string, string>)?.slug || "",
+          rating: 0,
+          reviewCount: 0,
+          colors: [],
+          inStock: (data.inStock as boolean) ?? true,
+          featured: false,
+          trending: false,
+          description: data.description as string,
+          specifications: {},
+        });
       } catch {
         setProduct(null);
       } finally {

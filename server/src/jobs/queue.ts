@@ -50,11 +50,12 @@ export async function addEmailJob(jobName: string, data: { to: string; subject: 
 
 /**
  * Schedule invoice email for an order (immediate)
+ * Uses emailQueue for retry support (3 attempts with exponential backoff)
  */
 export async function addInvoiceEmailJob(orderId: string) {
   try {
-    await verificationQueue.add("send-invoice-email", { orderId }, { delay: 0 });
-    logger.debug({ orderId }, "Invoice email job scheduled");
+    await emailQueue.add("send-invoice-email", { orderId }, { delay: 0 });
+    logger.debug({ orderId }, "Invoice email job scheduled in emailQueue");
   } catch (error) {
     logger.error({ error, orderId }, "Failed to schedule invoice email job");
   }

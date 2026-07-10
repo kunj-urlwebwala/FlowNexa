@@ -6,8 +6,11 @@ import { AdminRole } from "@prisma/client";
 
 const router = Router();
 
-// Webhook endpoint - NO auth required (Bland.ai sends callbacks here)
-router.post("/webhook", aiCallsController.handleWebhook);
+// Webhook endpoints - NO auth required
+router.post("/webhook", aiCallsController.handleWebhook); // Retell AI webhook
+router.post("/exotel-callback", aiCallsController.handleExotelCallback); // Exotel callback
+router.post("/bot-result", aiCallsController.handleBotResult); // Internal bot server result
+router.post("/test-call", aiCallsController.testCall); // Quick test call (no auth, dev only)
 
 // Admin-only endpoints (require auth + admin role)
 router.use(authMiddleware);

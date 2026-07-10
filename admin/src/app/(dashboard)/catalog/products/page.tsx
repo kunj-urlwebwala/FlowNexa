@@ -35,8 +35,8 @@ export default function ProductsListPage() {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await api.get<{ products: ProductRecord[] }>("/products?page=1&limit=100");
-      setProducts(result?.products || []);
+      const result = await api.get<ProductRecord[]>("/products?page=1&limit=100");
+      setProducts(Array.isArray(result) ? result : []);
     } catch {
       toast.error("Failed to load products");
     } finally {

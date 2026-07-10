@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User, Address } from "@/types/user";
 import { toast } from "sonner";
+import { useCartStore } from "./cartStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api/v1";
 
@@ -82,6 +83,8 @@ export const useAuthStore = create<AuthStore>()(
             user: formattedUser,
             token: data.data.accessToken,
           });
+          // Sync cart after login
+          useCartStore.getState().syncCartAfterLogin();
           return { success: true };
         } catch (error) {
           console.error("Storefront login failed:", error);
@@ -118,6 +121,8 @@ export const useAuthStore = create<AuthStore>()(
             user: formattedUser,
             token: data.data.accessToken,
           });
+          // Sync cart after registration (auto-login)
+          useCartStore.getState().syncCartAfterLogin();
           return { success: true };
         } catch (error) {
           console.error("Storefront registration failed:", error);

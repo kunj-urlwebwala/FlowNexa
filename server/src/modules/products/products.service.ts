@@ -68,14 +68,21 @@ export class ProductsService {
           category: { select: { id: true, name: true, slug: true } },
           brand: { select: { id: true, name: true, slug: true } },
           variants: true,
+          stocks: { select: { quantity: true } },
         },
         orderBy,
       }),
       prisma.product.count({ where }),
     ]);
 
+    const productsWithStock = products.map((p) => ({
+      ...p,
+      stock: p.stocks.reduce((sum, s) => sum + s.quantity, 0),
+      inStock: p.stocks.reduce((sum, s) => sum + s.quantity, 0) > 0,
+    }));
+
     return {
-      products,
+      products: productsWithStock,
       meta: {
         page,
         limit,
@@ -114,7 +121,8 @@ export class ProductsService {
       throw new NotFoundError("Product not found");
     }
 
-    return product;
+    const totalStock = product.stocks.reduce((sum, s) => sum + s.quantity, 0);
+    return { ...product, stock: totalStock, inStock: totalStock > 0 };
   }
 
   /**

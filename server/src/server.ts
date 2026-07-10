@@ -4,6 +4,7 @@ import { connectDatabase, disconnectDatabase } from "./config/database";
 import { logger } from "./config/logger";
 import { startEmailWorker, emailWorker } from "./jobs/workers/email.worker";
 import { startVerificationWorker, verificationWorker } from "./jobs/workers/verification-call.worker";
+import { exotelBotServer } from "./modules/exotel-bot/bot-server";
 
 const PORT = env.PORT;
 
@@ -15,6 +16,14 @@ async function bootstrap() {
   startEmailWorker();
   startVerificationWorker();
 
+  // Start Exotel AI Bot WebSocket server (if OpenAI key is configured)
+  if (env.OPENAI_API_KEY) {
+    exotelBotServer.start();
+    logger.info("🤖 Exotel AI Bot WebSocket server initialized");
+  } else {
+    logger.warn("⚠️  OPENAI_API_KEY not configured - Exotel AI Bot server not started");
+  }
+
   const server = app.listen(PORT, () => {
     logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
   });
@@ -24,6 +33,7 @@ async function bootstrap() {
     
     server.close(async () => {
       logger.info("HTTP server closed.");
+      exotelBotServer.stop();
       await emailWorker.close();
       await verificationWorker.close();
       logger.info("Queue workers closed.");

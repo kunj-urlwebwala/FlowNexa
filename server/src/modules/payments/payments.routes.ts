@@ -12,5 +12,6 @@ router.post("/webhook", express.raw({ type: "application/json" }), paymentsContr
 // Protected routes
 router.use(authMiddleware);
 router.post("/create-intent", paymentsController.createIntent);
+router.post("/create-checkout-session", paymentsController.createCheckoutSession);
 
 export default router;

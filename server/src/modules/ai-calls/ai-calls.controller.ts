@@ -96,12 +96,56 @@ export class AiCallsController {
   }
 
   /**
+   * Handle Exotel call status callback (no auth required)
+   */
+  async handleExotelCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      logger.info({ body: req.body }, "Exotel callback received");
+      await aiCallsService.handleExotelCallback(req.body);
+      res.status(200).send("OK");
+    } catch (error) {
+      logger.error({ error }, "Error processing Exotel callback");
+      res.status(200).send("OK");
+    }
+  }
+
+  /**
+   * Handle AI verification result from bot server (no auth - internal)
+   */
+  async handleBotResult(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { callRecordId, result, transcript, summary } = req.body;
+      await aiCallsService.updateCallWithResult(callRecordId, result, transcript, summary);
+      successResponse(res, "Call result updated successfully", {});
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Manually trigger a retry verification call (admin)
    */
   async retryCall(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await aiCallsService.retryCallManually(req.params.orderId as string);
       successResponse(res, `Verification call initiated to ${result.phone} (attempt #${result.attempt})`, result, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Quick test call — no order or auth needed
+   */
+  async testCall(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        res.status(400).json({ error: "Phone number is required" });
+        return;
+      }
+      const result = await aiCallsService.testCall(phone);
+      successResponse(res, `Test call initiated to ${phone}`, result, 201);
     } catch (error) {
       next(error);
     }

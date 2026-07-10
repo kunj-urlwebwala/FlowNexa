@@ -4,6 +4,7 @@ import { logger } from "../../config/logger";
 import { NotFoundError } from "../../shared/errors/AppError";
 import { addVerificationCallJob } from "../../jobs/queue";
 import { OrderStatus } from "@prisma/client";
+import { exotelApi } from "../exotel-bot/exotel-api";
 
 // Progressive retry delays: 15 minutes, then 30 minutes
 const RETRY_DELAYS_MS = [
@@ -13,9 +14,32 @@ const RETRY_DELAYS_MS = [
 
 const MAX_ATTEMPTS = 3;
 
+// In-memory store for pending order verifications (bot server reads this)
+const pendingOrders = new Map<string, {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  items: string;
+  total: string;
+  paymentMethod: string;
+  callRecordId: string;
+}>();
+
+export function getPendingOrder(callRecordId: string) {
+  return pendingOrders.get(callRecordId);
+}
+
+export function setPendingOrder(callRecordId: string, data: typeof pendingOrders extends Map<string, infer V> ? V : never) {
+  pendingOrders.set(callRecordId, data);
+}
+
+export function deletePendingOrder(callRecordId: string) {
+  pendingOrders.delete(callRecordId);
+}
+
 export class AiCallsService {
   /**
-   * Initiate an AI verification call via Bland.ai
+   * Initiate an AI verification call via Exotel or Retell AI
    */
   async initiateVerificationCall(orderId: string, attemptNumber: number): Promise<void> {
     // Fetch order with user details
@@ -118,28 +142,6 @@ export class AiCallsService {
       });
     }
 
-    // Check if Retell AI is configured
-    if (!env.RETELL_API_KEY || !env.RETELL_AGENT_ID || !env.RETELL_FROM_NUMBER) {
-      logger.warn({ orderId }, "Retell AI credentials or agent ID not configured, simulating call for development");
-      // In development without API key, auto-mark as completed
-      await prisma.verificationCall.update({
-        where: { id: callRecord.id },
-        data: {
-          status: "COMPLETED",
-          result: "CONFIRMED",
-          summary: "[DEV MODE] Auto-confirmed - Retell AI config not configured",
-          callDuration: 0,
-        },
-      });
-      // Auto-update order to PROCESSING in dev mode
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.PROCESSING },
-      });
-      logger.info({ orderId }, "[DEV MODE] Order auto-confirmed to PROCESSING");
-      return;
-    }
-
     // Build AI agent dynamic values (Hinglish context info)
     const itemsList = order.items
       .map((item) => `${item.productName} (Qty: ${item.quantity}, Price: ₹${item.price})`)
@@ -147,6 +149,105 @@ export class AiCallsService {
 
     const paymentMethodLabel = order.paymentMethod === "COD" ? "Cash on Delivery" : "Card Payment (Online)";
     const customerName = shippingAddr?.fullName || order.user?.name || "Customer";
+
+    // Decide which provider to use: Exotel > Retell AI > Dev Mode
+    const useExotel = !!(env.EXOTEL_ACCOUNT_SID && env.EXOTEL_API_KEY && env.EXOTEL_API_TOKEN && env.EXOTEL_VIRTUAL_NUMBER && env.OPENAI_API_KEY);
+    const useRetell = !!(env.RETELL_API_KEY && env.RETELL_AGENT_ID && env.RETELL_FROM_NUMBER);
+
+    if (useExotel) {
+      await this.initiateExotelCall(order, formattedPhone, callRecord, attemptNumber, customerName, itemsList, paymentMethodLabel);
+    } else if (useRetell) {
+      await this.initiateRetellCall(order, formattedPhone, callRecord, attemptNumber, customerName, itemsList, paymentMethodLabel);
+    } else {
+      // Dev mode — auto-confirm
+      logger.warn({ orderId }, "No AI calling provider configured, simulating call for development");
+      await prisma.verificationCall.update({
+        where: { id: callRecord.id },
+        data: {
+          status: "COMPLETED",
+          result: "CONFIRMED",
+          summary: "[DEV MODE] Auto-confirmed - no provider configured",
+          callDuration: 0,
+        },
+      });
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: OrderStatus.PROCESSING },
+      });
+      logger.info({ orderId }, "[DEV MODE] Order auto-confirmed to PROCESSING");
+    }
+  }
+
+  private async initiateExotelCall(
+    order: any,
+    formattedPhone: string,
+    callRecord: any,
+    attemptNumber: number,
+    customerName: string,
+    itemsList: string,
+    paymentMethodLabel: string,
+  ): Promise<void> {
+    const orderId = order.id;
+
+    // Store order details in memory so bot-server can look them up
+    setPendingOrder(callRecord.id, {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName,
+      items: itemsList,
+      total: order.total.toString(),
+      paymentMethod: paymentMethodLabel,
+      callRecordId: callRecord.id,
+    });
+
+    try {
+      const result = await exotelApi.connectDirectBot(
+        formattedPhone,
+        env.EXOTEL_VIRTUAL_NUMBER,
+        env.BOT_PUBLIC_URL,
+        callRecord.id,
+      );
+
+      if (result?.call?.sid) {
+        await prisma.verificationCall.update({
+          where: { id: callRecord.id },
+          data: { callId: result.call.sid },
+        });
+        logger.info({
+          orderId,
+          exotelCallSid: result.call.sid,
+          attemptNumber,
+          toNumber: formattedPhone,
+          botUrl: env.BOT_PUBLIC_URL,
+        }, "Exotel verification call initiated via direct bot");
+      } else {
+        logger.error({ orderId, response: result }, "Exotel call failed to initiate");
+        await prisma.verificationCall.update({
+          where: { id: callRecord.id },
+          data: { status: "FAILED", result: "ERROR", summary: JSON.stringify(result) },
+        });
+        await this.scheduleRetryCall(orderId, attemptNumber);
+      }
+    } catch (error) {
+      logger.error({ error, orderId }, "Failed to call Exotel API");
+      await prisma.verificationCall.update({
+        where: { id: callRecord.id },
+        data: { status: "FAILED", result: "ERROR", summary: String(error) },
+      });
+      await this.scheduleRetryCall(orderId, attemptNumber);
+    }
+  }
+
+  private async initiateRetellCall(
+    order: any,
+    formattedPhone: string,
+    callRecord: any,
+    attemptNumber: number,
+    customerName: string,
+    itemsList: string,
+    paymentMethodLabel: string,
+  ): Promise<void> {
+    const orderId = order.id;
 
     try {
       // Call Retell AI create-phone-call API
@@ -367,6 +468,105 @@ export class AiCallsService {
   }
 
   /**
+   * Handle Exotel call status callback (from Exotel webhook)
+   */
+  async handleExotelCallback(callbackData: any): Promise<void> {
+    const callSid = callbackData.CallSid || callbackData.call_sid;
+    const status = callbackData.CallStatus || callbackData.status;
+    const duration = parseInt(callbackData.CallDuration || callbackData.duration || "0", 10);
+
+    if (!callSid) {
+      logger.warn("Exotel callback received without CallSid");
+      return;
+    }
+
+    const callRecord = await prisma.verificationCall.findFirst({
+      where: { callId: callSid },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!callRecord) {
+      logger.warn({ callSid }, "No matching call record for Exotel callback");
+      return;
+    }
+
+    logger.info({ callSid, status, duration }, "Exotel call status update");
+
+    switch (status) {
+      case "completed":
+      case "in-progress":
+        // Call connected — the bot server will handle the result via API
+        // Just update the status to CALLING if not already
+        if (callRecord.status === "SCHEDULED") {
+          await prisma.verificationCall.update({
+            where: { id: callRecord.id },
+            data: { status: "CALLING", callDuration: duration },
+          });
+        }
+        break;
+
+      case "busy":
+      case "no-answer":
+      case "failed":
+      case "cancelled":
+        await prisma.verificationCall.update({
+          where: { id: callRecord.id },
+          data: {
+            status: "NO_ANSWER",
+            result: "NO_ANSWER",
+            summary: `Call not answered. Exotel status: ${status}`,
+            callDuration: duration,
+          },
+        });
+        await this.scheduleRetryCall(callRecord.orderId, callRecord.attemptNumber);
+        break;
+
+      default:
+        logger.info({ status }, "Unhandled Exotel call status");
+    }
+  }
+
+  /**
+   * Update call record with AI verification result (called by bot server)
+   */
+  async updateCallWithResult(
+    callRecordId: string,
+    result: "CONFIRMED" | "DENIED" | "ERROR",
+    transcript: string | null,
+    summary: string | null,
+  ): Promise<void> {
+    const callRecord = await prisma.verificationCall.findUnique({
+      where: { id: callRecordId },
+    });
+
+    if (!callRecord) {
+      logger.error({ callRecordId }, "Call record not found for result update");
+      return;
+    }
+
+    await prisma.verificationCall.update({
+      where: { id: callRecordId },
+      data: {
+        status: "COMPLETED",
+        result,
+        transcript,
+        summary,
+      },
+    });
+
+    if (result === "CONFIRMED") {
+      await prisma.order.update({
+        where: { id: callRecord.orderId },
+        data: { status: OrderStatus.PROCESSING },
+      });
+      logger.info({ orderId: callRecord.orderId }, "Order confirmed by AI via Exotel");
+    } else {
+      logger.info({ orderId: callRecord.orderId, result }, "Order not confirmed, scheduling retry");
+      await this.scheduleRetryCall(callRecord.orderId, callRecord.attemptNumber);
+    }
+  }
+
+  /**
    * Schedule retry call with progressive delays
    */
   async scheduleRetryCall(orderId: string, currentAttempt: number): Promise<void> {
@@ -519,7 +719,62 @@ export class AiCallsService {
   }
 
   /**
-   * Format phone number to E.164 format for Bland.ai
+   * Quick test call — bypasses queue, creates test record, calls immediately (no order needed)
+   */
+  async testCall(phone: string): Promise<{ callSid: string | null; callRecordId: string }> {
+    const formattedPhone = this.formatPhoneNumber(phone);
+
+    // Koi bhi ek order pakdo — jisme foreign key satisfy ho jaye
+    let order = await prisma.order.findFirst({ orderBy: { createdAt: "desc" } });
+    if (!order) {
+      throw new Error("No order found in DB. Pehle website se ek order place karo.");
+    }
+
+    const callRecord = await prisma.verificationCall.create({
+      data: {
+        orderId: order.id,
+        phoneNumber: formattedPhone,
+        status: "CALLING",
+        attemptNumber: 1,
+      },
+    });
+
+    const customerName = "Test Customer";
+    const itemsList = "Test Product (Qty: 1, Price: ₹100)";
+    const paymentMethodLabel = "Cash on Delivery";
+
+    setPendingOrder(callRecord.id, {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerName,
+      items: itemsList,
+      total: order.total.toString(),
+      paymentMethod: paymentMethodLabel,
+      callRecordId: callRecord.id,
+    });
+
+    const result = await exotelApi.connectDirectBot(
+      formattedPhone,
+      env.EXOTEL_VIRTUAL_NUMBER,
+      env.BOT_PUBLIC_URL,
+      callRecord.id,
+    );
+
+    if (result?.call?.sid) {
+      await prisma.verificationCall.update({
+        where: { id: callRecord.id },
+        data: { callId: result.call.sid },
+      });
+      logger.info({ callSid: result.call.sid, phone: formattedPhone }, "Test call initiated successfully");
+    } else {
+      logger.error({ result }, "Test call failed");
+    }
+
+    return { callSid: result?.call?.sid || null, callRecordId: callRecord.id };
+  }
+
+  /**
+   * Format phone number to E.164 format
    */
   private formatPhoneNumber(phone: string): string {
     // Remove all non-digit characters

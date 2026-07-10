@@ -89,6 +89,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       localStorage.removeItem("flownexa-admin-store");
       window.location.href = "/login";
     }
+    throw new Error("Session expired. Please log in again.");
   }
 
   const result = await response.json();

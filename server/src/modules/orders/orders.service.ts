@@ -106,6 +106,17 @@ export class OrdersService {
       return createdOrder;
     });
 
+    // Clear user's cart after successful order
+    try {
+      const cart = await prisma.cart.findUnique({ where: { userId } });
+      if (cart) {
+        await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+        logger.info({ userId, orderId: order.id }, "Cart cleared after order placement");
+      }
+    } catch (cartError) {
+      logger.error({ error: cartError, orderId: order.id }, "Failed to clear cart (non-critical)");
+    }
+
     // Schedule AI verification pipeline (fire-and-forget, don't block order response)
     try {
       // 0. Create initial verification call record so it appears in admin dashboard immediately
@@ -117,7 +128,8 @@ export class OrdersService {
         },
       });
 
-      // 1. Send invoice email immediately
+      // 1. Send invoice email immediately for all orders
+      //    For CARD orders, invoice is also sent on Stripe webhook payment confirmation
       await addInvoiceEmailJob(order.id);
 
       // 2. Schedule AI verification call after 5 minutes (300,000ms)
@@ -487,7 +499,23 @@ export class OrdersService {
 
     // Send refund confirmation email (fire-and-forget)
     try {
-      await addInvoiceEmailJob(order.id);
+      const user = await prisma.user.findUnique({
+        where: { id: order.userId },
+        select: { email: true, name: true },
+      });
+      if (user?.email) {
+        const refundHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #84cc16;">Refund Processed</h2>
+            <p>Hi ${user.name},</p>
+            <p>Your refund of <strong>₹${data.amount.toFixed(2)}</strong> for order <strong>${order.orderNumber}</strong> has been processed.</p>
+            <p>The amount will be credited to your original payment method within 5-7 business days.</p>
+            <br/>
+            <p>Best regards,<br/>FlowNexa Team</p>
+          </div>
+        `;
+        await sendMail(user.email, `Refund Confirmed - Order ${order.orderNumber}`, refundHtml);
+      }
     } catch {
       // Non-critical
     }

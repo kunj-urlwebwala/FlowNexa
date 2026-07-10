@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Cart, CartItem } from "@/types/cart";
 import { Product } from "@/types/product";
+import { api } from "@/lib/api";
 
 interface CartStore {
   cart: Cart;
@@ -10,6 +11,8 @@ interface CartStore {
   updateQuantity: (productId: string, quantity: number, color?: string, size?: string) => void;
   clearCart: () => void;
   applyDiscount: (code: string) => boolean;
+  fetchCart: () => Promise<void>;
+  syncCartAfterLogin: () => Promise<void>;
 }
 
 const calculateTotals = (items: CartItem[], currentDiscount = 0): Omit<Cart, "items"> => {
@@ -25,6 +28,18 @@ const calculateTotals = (items: CartItem[], currentDiscount = 0): Omit<Cart, "it
     total: parseFloat(total.toFixed(2)),
   };
 };
+
+function isAuthenticated(): boolean {
+  if (typeof window === "undefined") return false;
+  const storeData = localStorage.getItem("flownexa-auth-store");
+  if (!storeData) return false;
+  try {
+    const parsed = JSON.parse(storeData);
+    return !!parsed?.state?.token;
+  } catch {
+    return false;
+  }
+}
 
 export const useCartStore = create<CartStore>()(
   persist(
@@ -53,7 +68,6 @@ export const useCartStore = create<CartStore>()(
           newItems.push({ product, quantity, selectedColor: color, selectedSize: size });
         }
 
-        // Keep discount percentage (mock simple code tracker)
         const discountRate = get().cart.discount > 0 ? get().cart.discount / (get().cart.subtotal || 1) : 0;
         const totals = calculateTotals(newItems, discountRate);
 
@@ -63,9 +77,24 @@ export const useCartStore = create<CartStore>()(
             ...totals,
           },
         });
+
+        // Sync to backend if authenticated
+        if (isAuthenticated()) {
+          api.post("/cart/items", {
+            productId: product.id,
+            variantId: null,
+            quantity,
+          }).catch(() => {});
+        }
       },
       removeItem: (productId, color, size) => {
         const { items } = get().cart;
+        const itemToRemove = items.find(
+          (item) =>
+            item.product.id === productId &&
+            item.selectedColor === color &&
+            item.selectedSize === size
+        );
         const newItems = items.filter(
           (item) =>
             !(
@@ -84,6 +113,18 @@ export const useCartStore = create<CartStore>()(
             ...totals,
           },
         });
+
+        // Sync to backend if authenticated
+        if (isAuthenticated()) {
+          api.get("/cart").then((cartData: any) => {
+            const backendItem = cartData?.items?.find(
+              (bi: any) => bi.productId === productId
+            );
+            if (backendItem?.id) {
+              api.delete(`/cart/items/${backendItem.id}`).catch(() => {});
+            }
+          }).catch(() => {});
+        }
       },
       updateQuantity: (productId, quantity, color, size) => {
         if (quantity <= 0) {
@@ -112,6 +153,18 @@ export const useCartStore = create<CartStore>()(
             ...totals,
           },
         });
+
+        // Sync to backend if authenticated
+        if (isAuthenticated()) {
+          api.get("/cart").then((cartData: any) => {
+            const backendItem = cartData?.items?.find(
+              (bi: any) => bi.productId === productId
+            );
+            if (backendItem?.id) {
+              api.patch(`/cart/items/${backendItem.id}`, { quantity }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
       },
       clearCart: () => {
         set({
@@ -123,15 +176,20 @@ export const useCartStore = create<CartStore>()(
             total: 0,
           },
         });
+
+        // Sync to backend if authenticated
+        if (isAuthenticated()) {
+          api.delete("/cart").catch(() => {});
+        }
       },
       applyDiscount: (code) => {
         const uppercaseCode = code.toUpperCase();
         let discountRate = 0;
 
         if (uppercaseCode === "FLOWNEXA10") {
-          discountRate = 0.1; // 10% off
+          discountRate = 0.1;
         } else if (uppercaseCode === "WELCOME20") {
-          discountRate = 0.2; // 20% off
+          discountRate = 0.2;
         } else {
           return false;
         }
@@ -147,6 +205,82 @@ export const useCartStore = create<CartStore>()(
         });
 
         return true;
+      },
+      fetchCart: async () => {
+        if (!isAuthenticated()) return;
+        try {
+          const cartData: any = await api.get("/cart");
+          if (cartData?.items?.length > 0) {
+            // Convert backend cart items to local format
+            const localItems: CartItem[] = await Promise.all(
+              cartData.items.map(async (item: any) => {
+                let product: Product;
+                if (item.product) {
+                  product = {
+                    id: item.product.id,
+                    name: item.product.name,
+                    slug: item.product.slug,
+                    price: item.currentPrice || item.product.price,
+                    originalPrice: item.product.compareAtPrice,
+                    images: item.product.images || [],
+                    category: "",
+                    rating: 0,
+                    reviewCount: 0,
+                    inStock: item.inStock !== false,
+                    description: "",
+                    specifications: {},
+                  };
+                } else {
+                  const prodData: any = await api.get(`/products/${item.productId}`).catch(() => null);
+                  product = prodData || {
+                    id: item.productId,
+                    name: item.productName || "Product",
+                    slug: "",
+                    price: item.currentPrice || 0,
+                    images: [],
+                    category: "",
+                    rating: 0,
+                    reviewCount: 0,
+                    inStock: true,
+                    description: "",
+                    specifications: {},
+                  };
+                }
+                return {
+                  product,
+                  quantity: item.quantity,
+                };
+              })
+            );
+            const totals = calculateTotals(localItems, 0);
+            set({ cart: { items: localItems, ...totals } });
+          }
+        } catch {
+          // Silently fail - keep local cart
+        }
+      },
+      syncCartAfterLogin: async () => {
+        const { items } = get().cart;
+        if (items.length === 0) {
+          // No local items, just fetch backend cart
+          await get().fetchCart();
+          return;
+        }
+
+        // Push local items to backend
+        try {
+          for (const item of items) {
+            await api.post("/cart/items", {
+              productId: item.product.id,
+              variantId: null,
+              quantity: item.quantity,
+            }).catch(() => {});
+          }
+          // Then fetch the merged cart from backend
+          await get().fetchCart();
+        } catch {
+          // Keep local cart as fallback
+        }
       },
     }),
     {
